@@ -1,0 +1,3 @@
+[submodule "libs/ir-search-engine"]
+	path = libs/ir-search-engine
+	url = https://gitlab.com/polyu-ir-2015/ir-search-engine.git
