@@ -2,6 +2,7 @@ package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResult;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
+import scala.util.Random;
 
 import java.util.ArrayList;
 
@@ -12,12 +13,8 @@ public class DummyModel extends RetrievalModel {
     @Override
     public SearchResult search(Query query) {
         ArrayList<RetrievalDocument> retrievalDocuments = new ArrayList<>();
-        int fileId = 12;
-        double score = 100;
-        retrievalDocuments.add(new RetrievalDocument(fileId, score));
-        fileId = 23;
-        score = 80;
-        retrievalDocuments.add(new RetrievalDocument(fileId, score));
-        return SearchResultFactory.create(retrievalDocuments);
+        Random random=new Random();
+        retrievalDocuments.add(new RetrievalDocument(random.nextInt(10)+1,random.nextDouble()));
+        return SearchResultFactory.create(query, retrievalDocuments);
     }
 }
