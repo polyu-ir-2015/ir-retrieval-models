@@ -5,6 +5,7 @@ import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by nEbuLa on 14/11/2015.

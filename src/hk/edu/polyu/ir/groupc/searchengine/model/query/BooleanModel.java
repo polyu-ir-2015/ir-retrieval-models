@@ -8,7 +8,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class BooleanModel extends RetrievalModel{
     @Override
-    public SearchResult search(Query query) {
-        throw new NotImplementedException();
+    public SearchResult search(Query query, int numResult) {
+        return null;
     }
 }
