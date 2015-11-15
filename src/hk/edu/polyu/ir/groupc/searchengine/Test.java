@@ -1,5 +1,6 @@
 package hk.edu.polyu.ir.groupc.searchengine;
 
+import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.DummyModel;
 
 /**
@@ -13,6 +14,7 @@ public class Test {
     public static final String JUDGEROBUST = "res/judgerobust";
     public static final String QUERY_T="res/queryT";
     public static final String QUERY_TDN="res/queryTDN";
+    private static final String RESULT_FILE = "res/result.txt";
 
     public static void main(String[] args) {
         System.out.println("start");
@@ -48,7 +50,8 @@ public class Test {
             }
         };
         DummyModel dummyModel = new DummyModel();
-        launcher.start(dummyModel);
+        SearchResultFactory.setRunId("GroupC-DummyModel");
+        launcher.start(dummyModel,RESULT_FILE);
         System.out.println("end");
     }
 }
