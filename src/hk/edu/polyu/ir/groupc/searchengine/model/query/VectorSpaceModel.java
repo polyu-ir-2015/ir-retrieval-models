@@ -5,21 +5,20 @@ import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by nEbuLa on 14/11/2015.
- *
+ * <p>
  * Vector space model
- *
+ * <p>
  * Description:     This model make implements the vector space model idea taught in COMP433
- *                  classes. Besides the basics, additional weighting and normalization calculation
- *                  methods are implemented, which includes pivot document length normalization
- *                  and BM25.
- *
+ * classes. Besides the basics, additional weighting and normalization calculation
+ * methods are implemented, which includes pivot document length normalization
+ * and BM25.
+ * <p>
  * References:      https://en.wikipedia.org/wiki/Vector_space_model
- *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
- *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
+ * https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
+ * https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
  */
 public class VectorSpaceModel extends RetrievalModelWithRanking {
 
@@ -38,20 +37,24 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
     }
 
     @Override
-    public SearchResult search(Query pQuery) {
+    public SearchResult search(Query pQuery, int numOfRetrievalDocument) {
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
         // Get the average document vector length for further computation.
         Double averageDocumentVectorLength = this.indexAdapter.getAverageDocumentVectorLength();
 
-        HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
+        ExpandedTerm[] expandedTerms = pQuery.expandedTerms();
+//        HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
 
         // STEP 1:
         // Find all related documents and compute their scores.
-        for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
-            String queryTermString = queryItem.getKey();
-            Double queryTermWeight = queryItem.getValue();
+        for (ExpandedTerm queryItem : expandedTerms) {
+//        for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
+            String queryTermString = queryItem.term().termStem();
+//            String queryTermString = queryItem.getKey();
+            Double queryTermWeight = queryItem.weight();
+//            Double queryTermWeight = queryItem.getValue();
             Double queryTermIDF = this.indexAdapter.getInvertedDocumentFrequency(queryTermString);
             HashMap<Integer, ArrayList<Integer>> documentsContainTerm = this.indexAdapter.getDocumentsContainTerm(queryTermString);
 
@@ -60,14 +63,14 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                 Integer documentTermFrequency = document.getValue().size();
                 Double documentVectorLength = this.indexAdapter.getDocumentVectorLength(documentID);
 
-                if( ! retrievedDocuments.containsKey(documentID)) {
+                if (!retrievedDocuments.containsKey(documentID)) {
                     // Document is newly retrieved, initialize its document ranking to 0.
                     retrievedDocuments.put(documentID, 0.0);
                 }
 
                 // New term is found, related documents should have additional scores in ranking.
                 Double retrievedDocumentScore = retrievedDocuments.get(documentID);
-                switch(this.normalizationType) {
+                switch (this.normalizationType) {
                     case NONE:
                         retrievedDocumentScore += this.getRankingWithoutNormalization(
                                 queryTermWeight,
@@ -113,7 +116,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         ArrayList<RetrievalDocument> sortedRetrievedDocumentList = this.convertToRetrievalDocumentArrayList(retrievedDocuments);
         this.sortRetrievalDocumentArrayListByDescRanking(sortedRetrievedDocumentList);
 
-        return SearchResultFactory.create(sortedRetrievedDocumentList);
+        return SearchResultFactory.create(pQuery, sortedRetrievedDocumentList);
     }
 
 
@@ -134,35 +137,35 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                                                   Integer pDocumentTermFrequency, Double pDocumentVectorLength,
                                                   Double pAverageDocumentVectorLength, Double pPivotBParameter) {
         return pQueryTermWeight *
-                    (
-                            Math.log(
-                                    1 + Math.log(1 + pDocumentTermFrequency)
-                            )
-                                    /
-                            (
-                                    1 - pPivotBParameter + pPivotBParameter *
-                                            (pDocumentVectorLength / pAverageDocumentVectorLength)
-                            )
-                    ) * pQueryTermIDF;
+                (
+                        Math.log(
+                                1 + Math.log(1 + pDocumentTermFrequency)
+                        )
+                                /
+                                (
+                                        1 - pPivotBParameter + pPivotBParameter *
+                                                (pDocumentVectorLength / pAverageDocumentVectorLength)
+                                )
+                ) * pQueryTermIDF;
     }
 
     private Double getRankingByBM25(Double pQueryTermWeight, Double pQueryTermIDF, Integer pDocumentTermFrequency,
                                     Double pDocumentVectorLength, Double pAverageDocumentVectorLength,
                                     Double pPivotBParameter, Double pBM25KParameter) {
         return pQueryTermWeight *
-                    (
-                            (
-                                    (pBM25KParameter + 1.0) * pDocumentTermFrequency
-                            )
-                                    /
-                            (
-                                    pDocumentTermFrequency +
-                                            pBM25KParameter * (
-                                                1.0 - pPivotBParameter + pPivotBParameter *
-                                                        (pDocumentVectorLength / pAverageDocumentVectorLength)
-                                            )
-                            )
-                    ) * pQueryTermIDF;
+                (
+                        (
+                                (pBM25KParameter + 1.0) * pDocumentTermFrequency
+                        )
+                                /
+                                (
+                                        pDocumentTermFrequency +
+                                                pBM25KParameter * (
+                                                        1.0 - pPivotBParameter + pPivotBParameter *
+                                                                (pDocumentVectorLength / pAverageDocumentVectorLength)
+                                                )
+                                )
+                ) * pQueryTermIDF;
     }
 
 
