@@ -18,7 +18,7 @@ public class SimpleModel extends RetrievalModel {
     public SearchResult search(Query query, int numOfRetrievalDocument) {
         ConcurrentLinkedQueue<RetrievalDocument> retrievalDocuments = new ConcurrentLinkedQueue<>();
         for (ExpandedTerm expandedTerm : query.expandedTerms()) {
-            ScalaSupport.foreachMap(expandedTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
+            ScalaSupport.foreachParMap(expandedTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
                 @Override
                 public void accept(Tuple2<Object, ArrayBuffer<Object>> e) {
                     retrievalDocuments.add(new RetrievalDocument((int) e._1(), e._2().size() * expandedTerm.weight()));

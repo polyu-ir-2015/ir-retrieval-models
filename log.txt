@@ -1,0 +1,305 @@
+loading file-doc list
+loaded
+loading term index
+1.0000046% 	241M / 3559M
+2.0000093% 	304M / 3559M
+3.0000138% 	304M / 3559M
+4.0000186% 	451M / 3559M
+5.0000234% 	456M / 3559M
+6.0000277% 	456M / 3559M
+7.000032% 	838M / 3559M
+8.000037% 	838M / 3559M
+9.000041% 	838M / 3559M
+10.000047% 	838M / 3559M
+11.000051% 	859M / 3559M
+12.000055% 	859M / 3559M
+13.000061% 	859M / 3559M
+14.000064% 	1213M / 3559M
+15.000069% 	1213M / 3559M
+16.000074% 	1213M / 3559M
+17.00008% 	1213M / 3559M
+18.000082% 	1213M / 3559M
+19.000088% 	1256M / 3559M
+20.000093% 	1256M / 3559M
+21.000095% 	1256M / 3559M
+22.000101% 	1256M / 3559M
+23.000107% 	1636M / 3559M
+24.00011% 	1636M / 3559M
+25.000116% 	1636M / 3559M
+26.000122% 	1636M / 3559M
+27.000124% 	1636M / 3559M
+28.000128% 	1690M / 3559M
+29.000134% 	1690M / 3559M
+30.000137% 	1690M / 3559M
+31.000143% 	1690M / 3559M
+32.00015% 	1690M / 3559M
+33.000153% 	2164M / 3559M
+34.00016% 	2164M / 3559M
+35.00016% 	2164M / 3559M
+36.000164% 	2164M / 3559M
+37.00017% 	2164M / 3559M
+38.000175% 	2217M / 3559M
+39.00018% 	2217M / 3559M
+40.000187% 	2217M / 3559M
+41.00019% 	2217M / 3559M
+42.00019% 	2217M / 3559M
+43.0002% 	2129M / 3559M
+44.000202% 	2129M / 3559M
+45.000206% 	2129M / 3559M
+46.000214% 	2129M / 3559M
+47.000217% 	2129M / 3559M
+48.00022% 	2779M / 3559M
+49.00023% 	2779M / 3559M
+50.000233% 	2779M / 3559M
+51.000237% 	2779M / 3559M
+52.000244% 	2779M / 3559M
+53.000248% 	2735M / 3559M
+54.00025% 	2735M / 3559M
+55.00026% 	2735M / 3559M
+56.000263% 	2735M / 3559M
+57.000267% 	2735M / 3559M
+58.00027% 	2767M / 3559M
+59.00028% 	2767M / 3559M
+60.000282% 	2767M / 3559M
+61.000286% 	2767M / 3559M
+62.000294% 	2606M / 3559M
+63.000298% 	2606M / 3559M
+64.000305% 	2606M / 3559M
+65.000305% 	2602M / 3559M
+66.00031% 	2602M / 3559M
+67.00032% 	2602M / 3559M
+68.00032% 	3400M / 3559M
+69.00033% 	3400M / 3559M
+70.000336% 	3400M / 3559M
+71.000336% 	3192M / 3559M
+72.00034% 	3192M / 3559M
+73.00035% 	3192M / 3559M
+74.00035% 	3375M / 3559M
+75.00036% 	3375M / 3559M
+76.00037% 	3375M / 3559M
+77.00037% 	3375M / 3559M
+78.000374% 	3388M / 3559M
+79.00038% 	3388M / 3559M
+80.00038% 	3388M / 3559M
+81.00039% 	3382M / 3559M
+82.00039% 	3382M / 3559M
+83.0004% 	3382M / 3559M
+84.000404% 	3390M / 3559M
+85.00041% 	3390M / 3559M
+86.00042% 	3390M / 3559M
+87.00043% 	3389M / 3559M
+88.00043% 	3389M / 3559M
+89.000435% 	3389M / 3559M
+90.00044% 	3389M / 3559M
+91.00044% 	3559M / 3559M
+92.00045% 	3559M / 3559M
+93.00045% 	3559M / 3559M
+94.00046% 	3559M / 3559M
+95.000465% 	3559M / 3559M
+96.000465% 	3559M / 3559M
+97.00047% 	3559M / 3559M
+98.00048% 	3559M / 3559M
+99.00048% 	3559M / 3559M
+loaded
+running retrieval model: hk.edu.polyu.ir.groupc.searchengine.model.query.SimpleModel
+searching on queryId: 601
+finished search
+searching on queryId: 602
+finished search
+searching on queryId: 603
+finished search
+searching on queryId: 604
+finished search
+searching on queryId: 605
+finished search
+searching on queryId: 606
+finished search
+searching on queryId: 607
+finished search
+searching on queryId: 608
+finished search
+searching on queryId: 609
+finished search
+searching on queryId: 610
+finished search
+searching on queryId: 611
+finished search
+searching on queryId: 612
+finished search
+searching on queryId: 613
+finished search
+searching on queryId: 614
+finished search
+searching on queryId: 615
+finished search
+searching on queryId: 616
+finished search
+searching on queryId: 617
+finished search
+searching on queryId: 618
+finished search
+searching on queryId: 619
+finished search
+searching on queryId: 620
+finished search
+searching on queryId: 621
+finished search
+searching on queryId: 622
+finished search
+searching on queryId: 623
+finished search
+searching on queryId: 624
+finished search
+searching on queryId: 625
+finished search
+searching on queryId: 626
+finished search
+searching on queryId: 627
+finished search
+searching on queryId: 628
+finished search
+searching on queryId: 629
+finished search
+searching on queryId: 630
+finished search
+searching on queryId: 631
+finished search
+searching on queryId: 632
+finished search
+searching on queryId: 633
+finished search
+searching on queryId: 634
+finished search
+searching on queryId: 635
+finished search
+searching on queryId: 636
+finished search
+searching on queryId: 637
+finished search
+searching on queryId: 638
+finished search
+searching on queryId: 639
+finished search
+searching on queryId: 640
+finished search
+searching on queryId: 641
+finished search
+searching on queryId: 642
+finished search
+searching on queryId: 643
+finished search
+searching on queryId: 644
+finished search
+searching on queryId: 645
+finished search
+searching on queryId: 646
+finished search
+searching on queryId: 647
+finished search
+searching on queryId: 648
+finished search
+searching on queryId: 649
+finished search
+searching on queryId: 650
+finished search
+searching on queryId: 651
+finished search
+searching on queryId: 652
+finished search
+searching on queryId: 653
+finished search
+searching on queryId: 654
+finished search
+searching on queryId: 655
+finished search
+searching on queryId: 656
+finished search
+searching on queryId: 657
+finished search
+searching on queryId: 658
+finished search
+searching on queryId: 659
+finished search
+searching on queryId: 660
+finished search
+searching on queryId: 661
+finished search
+searching on queryId: 662
+finished search
+searching on queryId: 663
+finished search
+searching on queryId: 664
+finished search
+searching on queryId: 665
+finished search
+searching on queryId: 666
+finished search
+searching on queryId: 667
+finished search
+searching on queryId: 668
+finished search
+searching on queryId: 669
+finished search
+searching on queryId: 670
+finished search
+searching on queryId: 671
+finished search
+searching on queryId: 672
+finished search
+searching on queryId: 673
+finished search
+searching on queryId: 674
+finished search
+searching on queryId: 675
+finished search
+searching on queryId: 676
+finished search
+searching on queryId: 677
+finished search
+searching on queryId: 678
+finished search
+searching on queryId: 679
+finished search
+searching on queryId: 680
+finished search
+searching on queryId: 681
+finished search
+searching on queryId: 682
+finished search
+searching on queryId: 683
+finished search
+searching on queryId: 684
+finished search
+searching on queryId: 685
+finished search
+searching on queryId: 686
+finished search
+searching on queryId: 687
+finished search
+searching on queryId: 688
+finished search
+searching on queryId: 689
+finished search
+searching on queryId: 690
+finished search
+searching on queryId: 691
+finished search
+searching on queryId: 692
+finished search
+searching on queryId: 693
+finished search
+searching on queryId: 694
+finished search
+searching on queryId: 695
+finished search
+searching on queryId: 696
+finished search
+searching on queryId: 697
+finished search
+searching on queryId: 698
+finished search
+searching on queryId: 699
+finished search
+searching on queryId: 700
+finished search
+saving search result to file <res/result.txt>
