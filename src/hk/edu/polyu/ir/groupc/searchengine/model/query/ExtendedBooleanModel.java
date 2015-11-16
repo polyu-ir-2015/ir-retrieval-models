@@ -46,6 +46,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         // expendedQueryTerms will have a structure <Query term string, query term weight>
         HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
 
+        // STEP 1:
         // Compute the normalized term weight per document.
         for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
             String queryTermString = queryItem.getKey();
@@ -68,12 +69,14 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
                                 documentTermFrequency, maximumTFInDocument,
                                 queryTermIDF, maximumIDFInCollection)
                 );
+
             }  // End document foreach
         }  // End query term foreach
 
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
+        // STEP 2:
         // For each document, compute the similarity scores by using the extended boolean model's formula.
         int numberOfQueryTerms = expendedQueryTerms.size();
         double rankingScore;
