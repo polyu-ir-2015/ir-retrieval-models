@@ -1,5 +1,7 @@
 package hk.edu.polyu.ir.groupc.searchengine;
 
+import hk.edu.polyu.ir.groupc.searchengine.model.query.VectorSpaceModel;
+
 /**
  * Created by beenotung on 11/12/15.
  */

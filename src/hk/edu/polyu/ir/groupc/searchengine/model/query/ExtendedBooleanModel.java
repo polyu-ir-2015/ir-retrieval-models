@@ -1,8 +1,5 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
-import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResult;
-import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -19,39 +16,47 @@ import java.util.HashMap;
  */
 public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
-    private ExtendedBooleanModelOperationType operationType;
-    private IndexAdapter indexAdapter;
-    private Double modelPNormParameter;
+    public enum OperationType {
+        AND, OR
+    }
+
+    protected OperationType mOperationType;
+    protected InvertedIndexAdapter mInvertedIndexAdapter;
+    protected double mModelPNormParameter;
 
     public ExtendedBooleanModel() {
-        this.indexAdapter = new IndexAdapter();
+        // This adapter is used to link with the module developed by Benno.
+        this.mInvertedIndexAdapter = new InvertedIndexAdapter();
 
         // By default, we treat spaces between query terms as OR boolean operations.
-        this.operationType = ExtendedBooleanModelOperationType.OR;
-        this.modelPNormParameter = 2.0;
+        this.mOperationType = OperationType.OR;
+
+        // Setting the parameter p to 2 is said to be good.
+        this.mModelPNormParameter = 2.0;
     }
 
     @Override
-    public SearchResult search(Query pQuery) {
+    public HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery) {
         // termWeightsPerDocument will have a structure <Document ID, List of term weights in that document>
         HashMap<Integer, ArrayList<Double>> termWeightsPerDocument = new HashMap<>();
 
         // Get the average document vector length for further computation.
-        Double maximumIDFInCollection = this.indexAdapter.getMaximumInvertedDocumentFrequency();
+        double maximumIDFInCollection = this.mInvertedIndexAdapter.getMaximumInvertedDocumentFrequency();
 
-        ArrayList<String> rawQueryTerms = pQuery.getRawQueryTerms();
-        Integer numberOfQueryTerms = rawQueryTerms.size();
+        // expendedQueryTerms will have a structure <Query term string, query term weight>
+        HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
 
-        // STEP 1:
         // Compute the normalized term weight per document.
-        for (String queryTermString: rawQueryTerms) {
-            Double queryTermIDF = this.indexAdapter.getInvertedDocumentFrequency(queryTermString);
-            HashMap<Integer, ArrayList<Integer>> documentsContainTerm = this.indexAdapter.getDocumentsContainTerm(queryTermString);
+        for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
+            String queryTermString = queryItem.getKey();
+            double queryTermIDF = this.mInvertedIndexAdapter.getInvertedDocumentFrequency(queryTermString);
+            HashMap<Integer, ArrayList<Integer>> documentsContainTerm = this.mInvertedIndexAdapter
+                    .getDocumentsContainTerm(queryTermString);
 
             for (HashMap.Entry<Integer, ArrayList<Integer>> document : documentsContainTerm.entrySet()) {
-                Integer documentID = document.getKey();
-                Integer documentTermFrequency = document.getValue().size();
-                Integer maximumTFInDocument = this.indexAdapter.getMaximumTermFrequencyInDocument(documentID);
+                int documentID = document.getKey();
+                int documentTermFrequency = document.getValue().size();
+                int maximumTFInDocument = this.mInvertedIndexAdapter.getMaximumTermFrequencyInDocument(documentID);
 
                 if( ! termWeightsPerDocument.containsKey(documentID)) {
                     termWeightsPerDocument.put(documentID, new ArrayList<>());
@@ -59,54 +64,50 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
                 // Save all the weights inside each document for further computation.
                 termWeightsPerDocument.get(documentID).add(
-                        this.getSquaredAndNormalizedTermWeight(
+                        this.getNormalizedTermWeight(
                                 documentTermFrequency, maximumTFInDocument,
                                 queryTermIDF, maximumIDFInCollection)
                 );
-
             }  // End document foreach
         }  // End query term foreach
 
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
-        // STEP 2:
         // For each document, compute the similarity scores by using the extended boolean model's formula.
+        int numberOfQueryTerms = expendedQueryTerms.size();
+        double rankingScore;
+
         for (HashMap.Entry<Integer, ArrayList<Double>> document : termWeightsPerDocument.entrySet()) {
-            Integer documentID = document.getKey();
+            int documentID = document.getKey();
             ArrayList<Double> allWeights = document.getValue();
 
-            Double rankingScore = this.getDocumentRankingScore(
-                    this.operationType,
-                    this.modelPNormParameter,
-                    allWeights, numberOfQueryTerms);
+            rankingScore = this.getDocumentRankingScore(
+                    this.mOperationType,
+                    this.mModelPNormParameter,
+                    allWeights,
+                    numberOfQueryTerms);
             retrievedDocuments.put(documentID, rankingScore);
         }
 
-        // STEP 3:
-        // Convert the hash map into array list and sort it by rank in descending order.
-        ArrayList<RetrievalDocument> sortedRetrievedDocumentList;
-        sortedRetrievedDocumentList = this.convertToRetrievalDocumentArrayList(retrievedDocuments);
-        this.sortRetrievalDocumentArrayListByDescRanking(sortedRetrievedDocumentList);
-
-        return SearchResultFactory.create(sortedRetrievedDocumentList);
-    }
+        return retrievedDocuments;
+    }  // End getRankedDocumentsWithoutSort()
 
 
     /*
      *   Term weighting, normalization and document scoring functions
      */
-    private Double getSquaredAndNormalizedTermWeight(Integer pDocumentTermFrequency, Integer pMaximumTFInDocument,
-                                                     Double pQueryTermIDF, Double pMaximumIDFInCollection) {
+    protected double getNormalizedTermWeight(int pDocumentTermFrequency, int pMaximumTFInDocument,
+                                           double pQueryTermIDF, double pMaximumIDFInCollection) {
         // The term weight is normalized to 0 to 1.
         return (pDocumentTermFrequency / pMaximumTFInDocument) * (pQueryTermIDF / pMaximumIDFInCollection);
     }
 
-    private Double getDocumentRankingScore(ExtendedBooleanModelOperationType pOperationType, Double pModelPNormParameter,
-                                           ArrayList<Double> pAllWeights, Integer pNumberOfQueryTerms) {
-        Double documentRankingScore = 0.0;
+    protected double getDocumentRankingScore(OperationType pOperationType, double pModelPNormParameter,
+                                           ArrayList<Double> pAllWeights, int pNumberOfQueryTerms) {
+        double documentRankingScore = 0.0;
 
-        for(Double weight: pAllWeights) {
+        for(double weight: pAllWeights) {
             switch(pOperationType) {
                 case AND:
                     documentRankingScore += Math.pow(1.0 - weight, pModelPNormParameter);
@@ -119,7 +120,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
         documentRankingScore /= pNumberOfQueryTerms;
         documentRankingScore = Math.pow(documentRankingScore, 1.0 / pModelPNormParameter);
-        if(pOperationType == ExtendedBooleanModelOperationType.AND) {
+        if(pOperationType == OperationType.AND) {
             documentRankingScore = 1.0 - documentRankingScore;
         }
 
@@ -130,24 +131,24 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     /*
      *   Setter methods
      */
-    public void setOperationType(ExtendedBooleanModelOperationType pOperatorType) {
-        this.operationType = pOperatorType;
+    public void setOperationType(OperationType pOperatorType) {
+        this.mOperationType = pOperatorType;
     }
 
-    public void setModelPNormParameter(Double pModelPNormParameter) {
-        this.modelPNormParameter = pModelPNormParameter;
+    public void setModelPNormParameter(double pModelPNormParameter) {
+        this.mModelPNormParameter = pModelPNormParameter;
     }
 
 
     /*
      *   Getter methods
      */
-    public ExtendedBooleanModelOperationType getOperationType() {
-        return this.operationType;
+    public OperationType getOperationType() {
+        return this.mOperationType;
     }
 
-    public Double getModelPNormParameter() {
-        return this.modelPNormParameter;
+    public double getModelPNormParameter() {
+        return this.mModelPNormParameter;
     }
 
 }

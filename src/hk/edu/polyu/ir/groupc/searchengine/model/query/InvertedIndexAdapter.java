@@ -13,17 +13,17 @@ import java.util.HashMap;
  *                  it the get data and useful information from the inverted index data
  *                  structure.
  */
-public class IndexAdapter {
+public class InvertedIndexAdapter {
 
-    public Double getAverageDocumentVectorLength() {
+    public double getAverageDocumentVectorLength() {
         throw new NotImplementedException();
     }
 
-    public Double getDocumentVectorLength(Integer pDocumentID) {
+    public double getDocumentVectorLength(int pDocumentID) {
         throw new NotImplementedException();
     }
 
-    public Double getInvertedDocumentFrequency(String pTerm) {
+    public double getInvertedDocumentFrequency(String pTerm) {
         throw new NotImplementedException();
     }
 
@@ -31,11 +31,11 @@ public class IndexAdapter {
         throw new NotImplementedException();
     }
 
-    public Integer getMaximumTermFrequencyInDocument(Integer pDocumentID) {
+    public int getMaximumTermFrequencyInDocument(int pDocumentID) {
         throw new NotImplementedException();
     }
 
-    public Double getMaximumInvertedDocumentFrequency() {
+    public double getMaximumInvertedDocumentFrequency() {
         throw new NotImplementedException();
     }
 
