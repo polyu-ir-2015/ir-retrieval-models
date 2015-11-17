@@ -4,12 +4,14 @@ import comm.lang.ScalaSupport;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResult;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.TermEntity;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalDocument;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
 import scala.Option;
 import scala.Tuple2;
 import scala.collection.mutable.ArrayBuffer;
+import scala.collection.mutable.HashMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +49,35 @@ public class BooleanModel extends RetrievalModel {
             }
         }
         return SearchResultFactory.create(query, list);
+    }
+
+    private void addToList(HashMap<Object, ArrayBuffer<Object>> map, List<RetrievalDocument> list, double score) {
+        ScalaSupport.foreachMap(map, new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
+            @Override
+            public void accept(Tuple2<Object, ArrayBuffer<Object>> pair) {
+                list.add(new RetrievalDocument((Integer) pair._1(), score));
+            }
+        });
+    }
+
+    public SearchResult search_ext(Query query, int numResult) {
+        List<RetrievalDocument> result_list = new ArrayList<>();
+
+        List<RetrievalDocument> and_list = new ArrayList<>();
+        List<RetrievalDocument> or_list = new ArrayList<>();
+        List<RetrievalDocument> not_list = new ArrayList<>();
+        for (ExpandedTerm expandedTerm : query.expandedTerms()) {
+            if (expandedTerm.weight() > 0) {
+                addToList(expandedTerm.term().filePositionMap(), and_list, 1);
+            } else if (expandedTerm.weight() < 0) {
+                addToList(expandedTerm.term().filePositionMap(), not_list, 1);
+            } else {
+                addToList(expandedTerm.term().filePositionMap(), or_list, 1);
+            }
+        }
+        //TODO merge list
+
+        return SearchResultFactory.create(query, result_list);
     }
 
     public SearchResult search_or(Query query, int numResult) {
