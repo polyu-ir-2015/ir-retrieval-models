@@ -1,20 +1,18 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
-import comm.lang.ScalaSupport;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
+
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.mutable.ArrayBuffer;
-import scala.collection.parallel.Splitter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.function.Consumer;
 
 /**
+ *
  * Created by nEbuLa on 14/11/2015.
  *
  * Vector space model
@@ -27,6 +25,7 @@ import java.util.function.Consumer;
  * References:      https://en.wikipedia.org/wiki/Vector_space_model
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
+ *
  */
 public class VectorSpaceModel extends RetrievalModelWithRanking {
 
@@ -35,15 +34,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
     }
 
     protected NormalizationType mNormalizationType;
-    protected InvertedIndexAdapter mInvertedIndexAdapter;
     protected double mPivotBParameter;
     protected double mBM25KParameter;
 
 
     public VectorSpaceModel() {
-        // This adapter is used to link with the module developed by Benno.
-        this.mInvertedIndexAdapter = new InvertedIndexAdapter();
-
         // By default, the program uses inner product only to calculate the rank.
         this.mNormalizationType = NormalizationType.NONE;
 
@@ -60,23 +55,21 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
         // Get the average document vector length for further computation.
-        double averageDocumentVectorLength = this.mInvertedIndexAdapter.getAverageDocumentVectorLength();
+        double averageDocumentVectorLength = InvertedIndexAdapter.getInstance().getAverageDocumentVectorLength();
 
-        // expendedQueryTerms will have a structure <Query term string, query term weight>
         ExpandedTerm[] expendedQueryTerms = pQuery.expandedTerms();
 
         // Find all related documents and compute their scores.
         for (ExpandedTerm expendedQueryTerm : expendedQueryTerms) {
-            String queryTermString = expendedQueryTerm.term().termStem();
             double queryTermWeight = expendedQueryTerm.weight();
-            double queryTermIDF = this.mInvertedIndexAdapter.getInvertedDocumentFrequency(queryTermString);
+            double queryTermIDF = InvertedIndexAdapter.getInstance().getInvertedDocumentFrequency(expendedQueryTerm.term());
 
             Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
             while(documentsIterator.hasNext()) {
                 Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
                 int documentID = (int) document._1;
                 int documentTermFrequency = document._2.length();
-                double documentVectorLength = this.mInvertedIndexAdapter.getDocumentVectorLength(documentID);
+                double documentVectorLength = InvertedIndexAdapter.getInstance().getDocumentVectorLength(documentID);
 
                 if( ! retrievedDocuments.containsKey(documentID)) {
                     // Document is newly retrieved, initialize its document ranking to 0.
@@ -93,7 +86,8 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         documentVectorLength,
                         averageDocumentVectorLength,
                         this.mPivotBParameter,
-                        this.mBM25KParameter
+                        this.mBM25KParameter,
+                        this.mNormalizationType
                 );
             }  // End document while
         }  // End query term foreach
@@ -103,15 +97,18 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Scoring helper functions
+     *
      */
     protected void accumulateDocumentScore(HashMap<Integer, Double> pRetrievalDocuments, int pDocumentID,
                                            double pQueryTermWeight, double pQueryTermIDF, int pDocumentTermFrequency,
                                            double pDocumentVectorLength, double pAverageDocumentVectorLength,
-                                           double pPivotBParameter, double pBM25KParameter) {
+                                           double pPivotBParameter, double pBM25KParameter,
+                                           NormalizationType pNormalizationType) {
         double retrievedDocumentScore = pRetrievalDocuments.get(pDocumentID);
 
-        switch(this.mNormalizationType) {
+        switch(pNormalizationType) {
             case NONE:
                 retrievedDocumentScore += this.getRankingWithoutNormalization(
                         pQueryTermWeight,
@@ -152,7 +149,9 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Term weighting, normalization and document scoring functions
+     *
      */
     protected double getRankingWithoutNormalization(double pQueryTermWeight, double pQueryTermIDF,
                                                   int pDocumentTermFrequency) {
@@ -201,7 +200,9 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Setter methods
+     *
      */
     public void setNormalizationType(NormalizationType pType) {
         this.mNormalizationType = pType;
@@ -217,7 +218,9 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Getter methods
+     *
      */
     public NormalizationType getNormalizationType() {
         return this.mNormalizationType;
