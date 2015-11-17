@@ -1,8 +1,10 @@
-package hk.edu.polyu.ir.groupc.searchengine.model.query;
+package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
 import comm.lang.ScalaSupport;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResult;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
 import scala.Tuple2;
 import scala.collection.mutable.ArrayBuffer;
 
@@ -16,7 +18,7 @@ import java.util.function.Consumer;
 public class SimpleModel extends RetrievalModel {
     @Override
     public SearchResult search(Query query, int numOfRetrievalDocument) {
-        ConcurrentLinkedQueue<RetrievalDocument> retrievalDocuments = new ConcurrentLinkedQueue<>();
+        /*ConcurrentLinkedQueue<RetrievalDocument> retrievalDocuments = new ConcurrentLinkedQueue<>();
         for (ExpandedTerm expandedTerm : query.expandedTerms()) {
             ScalaSupport.foreachParMap(expandedTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
                 @Override
@@ -30,6 +32,7 @@ public class SimpleModel extends RetrievalModel {
         while (i < docs.length)
             docs[i++] = retrievalDocuments.poll();
         Arrays.sort(docs);
-        return SearchResultFactory.create(query, Arrays.asList(docs));
+        return SearchResultFactory.create(query, Arrays.asList(docs));*/
+        return null;
     }
 }

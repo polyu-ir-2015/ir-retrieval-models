@@ -1,4 +1,7 @@
-package hk.edu.polyu.ir.groupc.searchengine.model.query;
+package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
+
+import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +33,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
     @Override
     public HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery) {
-        // retrievedDocuments will have a structure <Document ID, ranking score>
+        /*// retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
         // Get all frequent query term-sets based on the input query.
@@ -52,11 +55,12 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                     retrievedDocuments.put(documentID, 0.0);
                 }
             }
-        }
+        }*/
+        throw new NotImplementedException();
     }
 
     protected ArrayList<QueryTermSet> getAllQueryTermSets(Query pQuery) {
-
+        throw new NotImplementedException();
     }
 
     protected class QueryTermSet {

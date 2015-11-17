@@ -1,5 +1,6 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
+import hk.edu.polyu.ir.groupc.searchengine.model.Index;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -16,27 +17,28 @@ import java.util.HashMap;
 public class InvertedIndexAdapter {
 
     public double getAverageDocumentVectorLength() {
-        throw new NotImplementedException();
+        return 200.0;
+//        throw new NotImplementedException();
     }
 
     public double getDocumentVectorLength(int pDocumentID) {
-        throw new NotImplementedException();
+//        throw new NotImplementedException();
+        return 100.0;
     }
 
     public double getInvertedDocumentFrequency(String pTerm) {
-        throw new NotImplementedException();
-    }
-
-    public HashMap<Integer, ArrayList<Integer>> getDocumentsContainTerm(String pTerm) {
-        throw new NotImplementedException();
+        return 0.58;
+//        throw new NotImplementedException();
     }
 
     public int getMaximumTermFrequencyInDocument(int pDocumentID) {
-        throw new NotImplementedException();
+        return 100;
+//        throw new NotImplementedException();
     }
 
     public double getMaximumInvertedDocumentFrequency() {
-        throw new NotImplementedException();
+//        throw new NotImplementedException();
+        return 9f;
     }
 
 }

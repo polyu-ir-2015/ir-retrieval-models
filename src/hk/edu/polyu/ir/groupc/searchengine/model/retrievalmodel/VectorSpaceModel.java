@@ -1,7 +1,18 @@
-package hk.edu.polyu.ir.groupc.searchengine.model.query;
+package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
+
+import comm.lang.ScalaSupport;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
+import scala.Tuple2;
+import scala.collection.Iterator;
+import scala.collection.mutable.ArrayBuffer;
+import scala.collection.parallel.Splitter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.Consumer;
 
 /**
  * Created by nEbuLa on 14/11/2015.
@@ -52,19 +63,19 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         double averageDocumentVectorLength = this.mInvertedIndexAdapter.getAverageDocumentVectorLength();
 
         // expendedQueryTerms will have a structure <Query term string, query term weight>
-        HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
+        ExpandedTerm[] expendedQueryTerms = pQuery.expandedTerms();
 
         // Find all related documents and compute their scores.
-        for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
-            String queryTermString = queryItem.getKey();
-            double queryTermWeight = queryItem.getValue();
+        for (ExpandedTerm expendedQueryTerm : expendedQueryTerms) {
+            String queryTermString = expendedQueryTerm.term().termStem();
+            double queryTermWeight = expendedQueryTerm.weight();
             double queryTermIDF = this.mInvertedIndexAdapter.getInvertedDocumentFrequency(queryTermString);
-            HashMap<Integer, ArrayList<Integer>> documentsContainTerm = this.mInvertedIndexAdapter
-                    .getDocumentsContainTerm(queryTermString);
 
-            for (HashMap.Entry<Integer, ArrayList<Integer>> document : documentsContainTerm.entrySet()) {
-                int documentID = document.getKey();
-                int documentTermFrequency = document.getValue().size();
+            Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
+            while(documentsIterator.hasNext()) {
+                Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
+                int documentID = (int) document._1;
+                int documentTermFrequency = document._2.length();
                 double documentVectorLength = this.mInvertedIndexAdapter.getDocumentVectorLength(documentID);
 
                 if( ! retrievedDocuments.containsKey(documentID)) {
@@ -84,7 +95,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         this.mPivotBParameter,
                         this.mBM25KParameter
                 );
-            }  // End document foreach
+            }  // End document while
         }  // End query term foreach
 
         return retrievedDocuments;

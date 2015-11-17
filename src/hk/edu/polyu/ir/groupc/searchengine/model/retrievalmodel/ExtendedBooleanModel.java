@@ -1,4 +1,9 @@
-package hk.edu.polyu.ir.groupc.searchengine.model.query;
+package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
+
+import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
+import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +42,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
     @Override
     public HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery) {
-        // termWeightsPerDocument will have a structure <Document ID, List of term weights in that document>
+        /*// termWeightsPerDocument will have a structure <Document ID, List of term weights in that document>
         HashMap<Integer, ArrayList<Double>> termWeightsPerDocument = new HashMap<>();
 
         // Get the average document vector length for further computation.
@@ -93,7 +98,9 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
             retrievedDocuments.put(documentID, rankingScore);
         }
 
-        return retrievedDocuments;
+        return retrievedDocuments;*/
+
+        throw new NotImplementedException();
     }  // End getRankedDocumentsWithoutSort()
 
 

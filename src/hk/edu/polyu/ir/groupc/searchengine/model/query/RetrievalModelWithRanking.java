@@ -27,7 +27,7 @@ abstract public class RetrievalModelWithRanking extends RetrievalModel {
     abstract protected HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery);
 
     @Override
-    public SearchResult search(Query pQuery,int pNumOfRetrievalDocument) {
+    public SearchResult search(Query pQuery, int pNumOfRetrievalDocument) {
         HashMap<Integer, Double> rankedDocuments = this.getRankedDocumentsWithoutSort(pQuery);
 
         // Help to sort the ranked documents and return an array list of RetrievalDocument objects
@@ -48,7 +48,9 @@ abstract public class RetrievalModelWithRanking extends RetrievalModel {
             }
         });
 
-        return SearchResultFactory.create(theArrayList);
+        // TODO: need to remove extra items based on the number of pNumOfRetrievalDocument required.
+
+        return SearchResultFactory.create(pQuery, theArrayList);
     }
 
 }
