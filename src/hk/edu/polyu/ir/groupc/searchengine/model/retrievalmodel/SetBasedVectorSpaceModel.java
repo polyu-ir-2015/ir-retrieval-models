@@ -1,12 +1,12 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
-import comm.Utils;
 import comm.lang.ScalaSupport;
 import hk.edu.polyu.ir.groupc.searchengine.Debug;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import scala.Tuple2;
+import scala.collection.Iterator;
 import scala.collection.mutable.ArrayBuffer;
 
 import java.util.*;
@@ -456,26 +456,78 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                                                                               int pProximityDistanceThreshold) {
             HashMap<Integer, Integer> documentToTermFrequencyMap = new HashMap<>();
 
-            for (ExpandedTerm term : pAllTerms) {
-                ScalaSupport.foreachMap(term.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
-                    @Override
-                    public void accept(Tuple2<Object, ArrayBuffer<Object>> pEntity) {
-                        int documentID = (int) pEntity._1;
+            // Find documents that has all query terms appear.
+            HashSet<Integer> hasAllTermsDocumentIDs = this.getAllDocumentIDsThatAllTermsAppeared(pAllTerms);
 
-                        Utils.foreach(pEntity._2.iterator(), new Consumer<Object>() {
-                            @Override
-                            public void accept(Object pTermPosition) {
+            for (Integer currentProcessingDocumentID : hasAllTermsDocumentIDs) {
+                // Initialize the term frequency count to zero.
+                documentToTermFrequencyMap.put(currentProcessingDocumentID, 0);
 
-                                // TODO...............
+                ExpandedTerm firstTerm = this.getTermSetFirstElement(pAllTerms);
+                ArrayBuffer<Object> firstTermPositions = firstTerm.term().filePositionMap().get(currentProcessingDocumentID).get();
 
+                Iterator<Object> firstTermPosIterator = firstTermPositions.iterator();
+
+                firstTermPosIteration:
+                while(firstTermPosIterator.hasNext()) {
+                    int currentFirstTermPosition = (int) firstTermPosIterator.next();
+                    int remainingProximityDistance = pProximityDistanceThreshold;
+
+                    // For each other terms, we check if there is any term that is within the proximity distance.
+                    // We iterate the terms in reverse order to check if the last one falls into the proximity distance
+                    // first, if the last few terms does not fall, there then the first term position checking can
+                    // be skipped to the next one.
+                    LinkedList<ExpandedTerm> reversedAllTerms = new LinkedList<>(pAllTerms);
+                    java.util.Iterator<ExpandedTerm> reversedAllTermsIterator = reversedAllTerms.descendingIterator();
+                    while (reversedAllTermsIterator.hasNext()) {
+                        ExpandedTerm comparingTerm = reversedAllTermsIterator.next();
+                        if(comparingTerm == firstTerm) {
+                            // Do not compare itself,
+                            // break because the list is iterated in reverse order, so comparingTerm == firstTerm
+                            // comparingTerm must be the last term.
+                            break;
+                        }
+
+                        ArrayBuffer<Object> comparingTermPositions = comparingTerm.term().filePositionMap()
+                                .get(currentProcessingDocumentID).get();
+
+                        Iterator<Object> comparingTermPosIterator = comparingTermPositions.iterator();
+
+                        comparingTermIteration:
+                        while(comparingTermPosIterator.hasNext()) {
+                            int currentComparingTermPosition = (int) comparingTermPosIterator.next();
+                            int twoTermsProximityDistance = currentComparingTermPosition - currentFirstTermPosition;
+
+                            // If the comparing term is too far away from the current first term position we
+                            // are comparing, there is no need to consider the current first term position anymore,
+                            // because any further comparing terms will have a farther distance and thus
+                            // not possible to be matched.
+                            if(twoTermsProximityDistance > remainingProximityDistance) {
+                                continue firstTermPosIteration;
                             }
-                        });
+
+                            // If the comparing term is located before the current first term position,
+                            // then it is not necessary to consider it and just move the comparing term pointer forward.
+                            if(twoTermsProximityDistance <= 0) {
+                                continue comparingTermIteration;
+                            }
+
+                            // We found one term falls into the proximity range, continue to search
+                            // for other terms.
+                            remainingProximityDistance = twoTermsProximityDistance;
+                        }
                     }
-                });
+
+                    // When reached here, that means a term set is found.
+                    documentToTermFrequencyMap.put(
+                            currentProcessingDocumentID,
+                            documentToTermFrequencyMap.get(currentProcessingDocumentID) + 1
+                    );
+                }
             }
 
             return documentToTermFrequencyMap;
-        }
+        }  // End computeDocumentTermSetFrequencies()
 
         protected int computeDocumentFrequency(HashMap<Integer, Integer> pDocumentToTermSetFrequenciesMap) {
             return pDocumentToTermSetFrequenciesMap.size();
@@ -485,6 +537,58 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
             return Math.log(
                     pTotalNumberOfDocuments / (pDocumentFrequency + 1)
             );
+        }
+
+
+        /*
+         *
+         *  Helper methods
+         *
+         */
+        protected ExpandedTerm getTermSetFirstElement(LinkedHashSet<ExpandedTerm> pTheList) {
+            if(pTheList.size() <= 0) {
+                return null;
+            }
+            return pTheList.iterator().next();
+        }
+
+        protected HashSet<Integer> getAllDocumentIDsThatAllTermsAppeared(LinkedHashSet<ExpandedTerm> pAllTerms) {
+            HashSet<Integer> hasAllTermsDocumentIDs = new HashSet<>();
+
+            // Get all the document IDs for each term, and then do set intersection operation to
+            // find which documents has all terms.
+            ExpandedTerm firstTerm = this.getTermSetFirstElement(pAllTerms);
+            if(firstTerm == null) {
+                return hasAllTermsDocumentIDs;
+            }
+
+            ScalaSupport.foreachMap(firstTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
+                @Override
+                public void accept(Tuple2<Object, ArrayBuffer<Object>> pDocumentContainFirstTerm) {
+                    int documentIDContainFirstTerm = (int) pDocumentContainFirstTerm._1;
+                    hasAllTermsDocumentIDs.add(documentIDContainFirstTerm);
+                }
+            });
+
+            for (ExpandedTerm comparingTerm : pAllTerms) {
+                if(comparingTerm == firstTerm) {
+                    continue;  // Do not intersect itself.
+                }
+
+                HashSet<Integer> currentComparingDocumentIDs = new HashSet<>();
+                ScalaSupport.foreachMap(comparingTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
+                    @Override
+                    public void accept(Tuple2<Object, ArrayBuffer<Object>> pDocumentContainCurrentTerm) {
+                        int documentIDContainCurrentTerm = (int) pDocumentContainCurrentTerm._1;
+                        currentComparingDocumentIDs.add(documentIDContainCurrentTerm);
+                    }
+                });
+
+                // Do an intersection operation to remove documents that does not appear all query term.
+                hasAllTermsDocumentIDs.retainAll(currentComparingDocumentIDs);
+            }
+
+            return hasAllTermsDocumentIDs;
         }
 
 
