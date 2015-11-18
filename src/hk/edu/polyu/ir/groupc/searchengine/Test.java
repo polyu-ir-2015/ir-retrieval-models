@@ -52,7 +52,7 @@ public class Test {
         };
 
         RetrievalModel model = new VectorSpaceModel();
-        SearchResultFactory.setRunId("group-c-" + model.getClass().getSimpleName());
+        SearchResultFactory.setRunId("GROUP-C-" + model.getClass().getSimpleName());
 
         launcher.start(model, RESULT_FILE, 100);
         System.out.println("end");

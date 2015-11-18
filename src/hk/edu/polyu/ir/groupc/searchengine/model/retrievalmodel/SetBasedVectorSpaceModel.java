@@ -54,6 +54,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
         // For all term-sets, the frequent of the term-set must exceed the threshold below to be considered as frequent.
         // Adjusting this value will greatly impact the retrieval result.
+        // The unit is measured in number of documents (i.e document frequency)
         this.mTermSetAbsoluteSupport = 10;
 
         // To prevent heavy computation, you can limit the program when to stop deriving next term-set level here.
@@ -152,7 +153,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                     pTermSetAbsoluteSupport
             );
 
-            if(currentLevel.numberOfFrequentTermSets() <= 0) {
+            if(currentLevel.getNumberOfFrequentTermSets() <= 0) {
                 // No frequent term-sets are found. Stop iterating to the next level.
                 break;
             }
@@ -186,7 +187,9 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
         // For each query term, we need to verify if it is frequent or not
         // If not, kick it out from the candidate set.
-        this.filterCandidateSetsBySupport(candidateTermSets, pTermSetAbsoluteSupport);
+        // Note: We treat all user inputs are important, so we do not check for min. support
+        // for first level to let all terms to be included in the calculation.
+        // this.filterCandidateSetsBySupport(candidateTermSets, pTermSetAbsoluteSupport);
 
         firstAssocLevel.mAllFrequentQueryTermSets = candidateTermSets;
         return firstAssocLevel;
@@ -248,10 +251,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 // some subsets of it is not frequent, we check if its all immediate subset are
                 // in the previous association level, if one of the term-set is missing, then it will not
                 // be a candidate set.
-                for (QueryTermSet immediateSubset : this.deriveAllImmediateSubsets(unionTermSet)) {
-                    if( ! this.hasTermSetsAlreadyContain(pPreviousLevelTermSets.mAllFrequentQueryTermSets, immediateSubset)) {
-                        continue;
-                    }
+                if(this.someImmediateSubsetsAreNotFrequent(pPreviousLevelTermSets.mAllFrequentQueryTermSets, unionTermSet)) {
+                    continue;
                 }
 
                 // Add to the association level, we call them candidate term-sets.
@@ -270,11 +271,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
      */
     protected QueryTermSet unionQueryTermSets(QueryTermSet pTermSet1, QueryTermSet pTermSet2) {
         QueryTermSet unionTermSet = new QueryTermSet();
-        LinkedHashSet<ExpandedTerm> clonedTermsInTermSet1 = (LinkedHashSet<ExpandedTerm>) pTermSet1.mAllTerms.clone();
-
-        clonedTermsInTermSet1.addAll(pTermSet2.mAllTerms);
-        unionTermSet.mAllTerms = clonedTermsInTermSet1;
-
+        unionTermSet.mAllTerms = (LinkedHashSet<ExpandedTerm>) pTermSet1.mAllTerms.clone();
+        unionTermSet.mAllTerms.addAll(pTermSet2.mAllTerms);
         return unionTermSet;
     }
 
@@ -321,16 +319,26 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         }
     }
 
-    protected void setProximityDistanceForEachTermSet(LinkedHashSet<QueryTermSet> candidateTermSets, int pProximityDistance) {
-        for (QueryTermSet currentCandidateTermSet : candidateTermSets) {
+    protected void setProximityDistanceForEachTermSet(LinkedHashSet<QueryTermSet> pCandidateTermSets, int pProximityDistance) {
+        for (QueryTermSet currentCandidateTermSet : pCandidateTermSets) {
             currentCandidateTermSet.setProximityDistanceThreshold(pProximityDistance);
         }
     }
 
-    protected void updateValuesForEachTermSet(LinkedHashSet<QueryTermSet> candidateTermSets) {
-        for (QueryTermSet currentCandidateTermSet : candidateTermSets) {
+    protected void updateValuesForEachTermSet(LinkedHashSet<QueryTermSet> pCandidateTermSets) {
+        for (QueryTermSet currentCandidateTermSet : pCandidateTermSets) {
             currentCandidateTermSet.updateValues();
         }
+    }
+
+    protected boolean someImmediateSubsetsAreNotFrequent(LinkedHashSet<QueryTermSet> pPreviousLevelFrequentTermSets,
+                                                         QueryTermSet pCheckingTermSet) {
+        for (QueryTermSet immediateSubset : this.deriveAllImmediateSubsets(pCheckingTermSet)) {
+            if( ! this.hasTermSetsAlreadyContain(pPreviousLevelFrequentTermSets, immediateSubset)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -385,7 +393,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
             this.mAllFrequentQueryTermSets = new LinkedHashSet<>();
         }
 
-        public int numberOfFrequentTermSets() {
+        public int getNumberOfFrequentTermSets() {
             return this.mAllFrequentQueryTermSets.size();
         }
 
