@@ -1,14 +1,19 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
+import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import scala.Tuple2;
+import scala.collection.Iterator;
+import scala.collection.mutable.ArrayBuffer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
+ *
  * Created by nEbuLa on 14/11/2015.
  *
  * Extended Boolean Model
@@ -18,6 +23,7 @@ import java.util.HashMap;
  *                  of these two models results in the extended boolean model.
  *
  * References:      https://en.wikipedia.org/wiki/Extended_Boolean_model
+ *
  */
 public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
@@ -26,15 +32,11 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     }
 
     protected OperationType mOperationType;
-    protected InvertedIndexAdapter mInvertedIndexAdapter;
     protected double mModelPNormParameter;
 
     public ExtendedBooleanModel() {
-        // This adapter is used to link with the module developed by Benno.
-        this.mInvertedIndexAdapter = new InvertedIndexAdapter();
-
-        // By default, we treat spaces between query terms as OR boolean operations.
-        this.mOperationType = OperationType.OR;
+        // By default, we treat spaces between query terms as AND boolean operations.
+        this.mOperationType = OperationType.AND;
 
         // Setting the parameter p to 2 is said to be good.
         this.mModelPNormParameter = 2.0;
@@ -42,27 +44,25 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
     @Override
     public HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery) {
-        /*// termWeightsPerDocument will have a structure <Document ID, List of term weights in that document>
+        // termWeightsPerDocument will have a structure <Document ID, List of term weights in that document>
         HashMap<Integer, ArrayList<Double>> termWeightsPerDocument = new HashMap<>();
 
         // Get the average document vector length for further computation.
-        double maximumIDFInCollection = this.mInvertedIndexAdapter.getMaximumInvertedDocumentFrequency();
+        double maximumIDFInCollection = InvertedIndexAdapter.getInstance().getMaximumInvertedDocumentFrequency();
 
-        // expendedQueryTerms will have a structure <Query term string, query term weight>
-        HashMap<String, Double> expendedQueryTerms = pQuery.getExpandedQueryTermsWithWeight();
+        ExpandedTerm[] expendedQueryTerms = pQuery.expandedTerms();
 
         // STEP 1:
         // Compute the normalized term weight per document.
-        for (HashMap.Entry<String, Double> queryItem : expendedQueryTerms.entrySet()) {
-            String queryTermString = queryItem.getKey();
-            double queryTermIDF = this.mInvertedIndexAdapter.getInvertedDocumentFrequency(queryTermString);
-            HashMap<Integer, ArrayList<Integer>> documentsContainTerm = this.mInvertedIndexAdapter
-                    .getDocumentsContainTerm(queryTermString);
+        for (ExpandedTerm expendedQueryTerm : expendedQueryTerms) {
+            double queryTermIDF = InvertedIndexAdapter.getInstance().getInvertedDocumentFrequency(expendedQueryTerm.term());
 
-            for (HashMap.Entry<Integer, ArrayList<Integer>> document : documentsContainTerm.entrySet()) {
-                int documentID = document.getKey();
-                int documentTermFrequency = document.getValue().size();
-                int maximumTFInDocument = this.mInvertedIndexAdapter.getMaximumTermFrequencyInDocument(documentID);
+            Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
+            while(documentsIterator.hasNext()) {
+                Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
+                int documentID = (int) document._1;
+                int documentTermFrequency = document._2.length();
+                int maximumTFInDocument = InvertedIndexAdapter.getInstance().getMaximumTermFrequencyInDocument(documentID);
 
                 if( ! termWeightsPerDocument.containsKey(documentID)) {
                     termWeightsPerDocument.put(documentID, new ArrayList<>());
@@ -83,7 +83,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
         // STEP 2:
         // For each document, compute the similarity scores by using the extended boolean model's formula.
-        int numberOfQueryTerms = expendedQueryTerms.size();
+        int numberOfQueryTerms = expendedQueryTerms.length;
         double rankingScore;
 
         for (HashMap.Entry<Integer, ArrayList<Double>> document : termWeightsPerDocument.entrySet()) {
@@ -98,14 +98,14 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
             retrievedDocuments.put(documentID, rankingScore);
         }
 
-        return retrievedDocuments;*/
-
-        throw new NotImplementedException();
+        return retrievedDocuments;
     }  // End getRankedDocumentsWithoutSort()
 
 
     /*
+     *
      *   Term weighting, normalization and document scoring functions
+     *
      */
     protected double getNormalizedTermWeight(int pDocumentTermFrequency, int pMaximumTFInDocument,
                                            double pQueryTermIDF, double pMaximumIDFInCollection) {
@@ -139,7 +139,9 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Setter methods
+     *
      */
     public void setOperationType(OperationType pOperatorType) {
         this.mOperationType = pOperatorType;
@@ -151,7 +153,9 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
 
     /*
+     *
      *   Getter methods
+     *
      */
     public OperationType getOperationType() {
         return this.mOperationType;
