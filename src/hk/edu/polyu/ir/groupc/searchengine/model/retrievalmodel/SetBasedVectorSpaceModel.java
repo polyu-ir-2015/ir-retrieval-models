@@ -501,28 +501,29 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
                         Iterator<Object> comparingTermPosIterator = comparingTermPositions.iterator();
 
-                        comparingTermIteration:
                         while(comparingTermPosIterator.hasNext()) {
+                            // We assume all positions are sorted in ascending order.
                             int currentComparingTermPosition = (int) comparingTermPosIterator.next();
                             int twoTermsProximityDistance = currentComparingTermPosition - currentFirstTermPosition;
-
-                            // If the comparing term is too far away from the current first term position we
-                            // are comparing, there is no need to consider the current first term position anymore,
-                            // because any further comparing terms will have a farther distance and thus
-                            // not possible to be matched.
-                            if(twoTermsProximityDistance > remainingProximityDistance) {
-                                continue firstTermPosIteration;
-                            }
 
                             // If the comparing term is located before the current first term position,
                             // then it is not necessary to consider it and just move the comparing term pointer forward.
                             if(twoTermsProximityDistance <= 0) {
-                                continue comparingTermIteration;
+                                continue;
                             }
 
-                            // We found one term falls into the proximity range, continue to search
-                            // for other terms.
-                            remainingProximityDistance = twoTermsProximityDistance;
+                            if(twoTermsProximityDistance > remainingProximityDistance) {
+                                // If the comparing term is too far away from the current first term position we
+                                // are comparing, there is no need to consider the current first term position anymore,
+                                // because any further comparing terms will have a farther distance and thus
+                                // not possible to be matched.
+                                continue firstTermPosIteration;
+                            } else {
+                                // Otherwise, we found one term falls into the proximity range, continue to search
+                                // for other terms.
+                                remainingProximityDistance = twoTermsProximityDistance;
+                                break;
+                            }
                         }
                     }
 

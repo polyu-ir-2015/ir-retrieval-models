@@ -57,7 +57,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         for (ExpandedTerm expendedQueryTerm : expendedQueryTerms) {
             double queryTermIDF = InvertedIndexAdapter.getInstance().getInvertedDocumentFrequency(expendedQueryTerm.term());
 
-            Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
+            Iterator<Tuple2<Object, ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
             while(documentsIterator.hasNext()) {
                 Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
                 int documentID = (int) document._1;
