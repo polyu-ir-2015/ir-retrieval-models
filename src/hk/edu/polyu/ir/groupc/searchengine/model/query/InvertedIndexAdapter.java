@@ -2,17 +2,14 @@ package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.Index;
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.TermEntity;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
- *
  * Created by nEbuLa on 14/11/2015.
- *
+ * <p>
  * Description:     This class is used to abstract the implementation of inverted index done
- *                  by Benno. Retrieval models should construct an adapter of this and use
- *                  it the get data and useful information from the inverted index data
- *                  structure.
- *
+ * by Benno. Retrieval models should construct an adapter of this and use
+ * it the get data and useful information from the inverted index data
+ * structure.
  */
 public class InvertedIndexAdapter {
 

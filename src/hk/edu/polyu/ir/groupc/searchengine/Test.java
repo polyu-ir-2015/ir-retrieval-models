@@ -1,14 +1,14 @@
 package hk.edu.polyu.ir.groupc.searchengine;
 
-import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
+import hk.edu.polyu.ir.groupc.searchengine.model.result.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.VectorSpaceModel;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Created by beenotung on 11/12/15.

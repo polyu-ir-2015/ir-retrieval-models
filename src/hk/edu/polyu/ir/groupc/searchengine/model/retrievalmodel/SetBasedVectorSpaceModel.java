@@ -14,29 +14,27 @@ import java.util.function.Consumer;
 
 
 /**
- *
  * Created by nEbuLa on 15/11/2015.
- *
+ * <p>
  * Set Based Model
- *
+ * <p>
  * Description:     This model is built based on a published paper (see references below). This model
- *                  combines set theory and vector space model ranking. The fundamental
- *                  idea is to use mutual dependencies among index terms to improve results. Term dependencies
- *                  are captured through term-sets, which are sets of correlated terms.
- *
- *                  The algorithm of this model is to find all frequent term-sets (similar to finding
- *                  association rules in data mining) based on the query terms. Term-sets refer to a set
- *                  of query terms that appeared in documents. These frequent term-sets
- *                  are then treated as if a single term and calculate values such as TF and IDF, and
- *                  use ranking functions in vector space model.
- *
- *                  For a simple example, consider the query contains terms A, B, C, D, E. After getting
- *                  values from inverted index, we found out that A, B, D, E, AB, AD, BD and ABD are frequent
- *                  term-sets. We then calculate their TF and IDF values, and apply vector space model.
- *
+ * combines set theory and vector space model ranking. The fundamental
+ * idea is to use mutual dependencies among index terms to improve results. Term dependencies
+ * are captured through term-sets, which are sets of correlated terms.
+ * <p>
+ * The algorithm of this model is to find all frequent term-sets (similar to finding
+ * association rules in data mining) based on the query terms. Term-sets refer to a set
+ * of query terms that appeared in documents. These frequent term-sets
+ * are then treated as if a single term and calculate values such as TF and IDF, and
+ * use ranking functions in vector space model.
+ * <p>
+ * For a simple example, consider the query contains terms A, B, C, D, E. After getting
+ * values from inverted index, we found out that A, B, D, E, AB, AD, BD and ABD are frequent
+ * term-sets. We then calculate their TF and IDF values, and apply vector space model.
+ * <p>
  * References:      http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.116.7973&rep=rep1&type=pdf
- *                  http://grupoweb.upf.es/WRG/mir2ed/pdf/slides_chap03.pdf (see Set-based model section)
- *
+ * http://grupoweb.upf.es/WRG/mir2ed/pdf/slides_chap03.pdf (see Set-based model section)
  */
 public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
@@ -72,8 +70,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         // Get all frequent query term-sets based on the input query.
         // The structure is <Term-set level, A set of query term-sets in that level>
         ArrayList<AssociationLevel> allFrequentAssociationLevels = this.generateAllAssocLevelWithFrequentTermSets(
-                pQuery, 
-                this.mProximityDistance, 
+                pQuery,
+                this.mProximityDistance,
                 this.mTermSetRelativeMinSupport,
                 this.mMaximumAssociationLevel
         );
@@ -96,7 +94,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                         int documentTermSetFrequency = document.getValue();
                         double documentVectorLength = InvertedIndexAdapter.getInstance().getDocumentVectorLength(documentID);
 
-                        if ( ! retrievedDocuments.containsKey(documentID)) {
+                        if (!retrievedDocuments.containsKey(documentID)) {
                             // Document is newly retrieved, initialize its document ranking to 0.
                             retrievedDocuments.put(documentID, 0.0);
                         }
@@ -109,8 +107,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                                 documentTermSetFrequency,
                                 documentVectorLength,
                                 averageDocumentVectorLength,
-                                this.mPivotBParameter,
-                                this.mBM25KParameter,
+                                this.mPivotBParameter.value,
+                                this.mBM25KParameter.value,
                                 this.mNormalizationType
                         );
                     }  // End document foreach
@@ -144,7 +142,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
         // Then we iterate through different levels of association rules, starting from level 2, to find
         // frequent query term sets.
-        for(int currentAssocLevel = 2; currentAssocLevel <= pMaxAssocLevel; currentAssocLevel++) {
+        for (int currentAssocLevel = 2; currentAssocLevel <= pMaxAssocLevel; currentAssocLevel++) {
             // Minus 2 because we need to get the previous level and the ArrayList index starts from zero.
             AssociationLevel previousLevel = allFrequentAssocLevels.get(currentAssocLevel - 2);
             AssociationLevel currentLevel = this.deriveNextLevelWithFrequentTermSets(
@@ -153,7 +151,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                     pTermSetRelativeMinSupport
             );
 
-            if(currentLevel.getNumberOfFrequentTermSets() <= 0) {
+            if (currentLevel.getNumberOfFrequentTermSets() <= 0) {
                 // No frequent term-sets are found. Stop iterating to the next level.
                 break;
             }
@@ -205,7 +203,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         // The candidate term-sets have already been pruned.
         LinkedHashSet<QueryTermSet> candidateTermSets = this.deriveNextLevelCandidateTermSets(pPreviousLevelTermSets);
 
-        if(candidateTermSets.size() <= 0) {
+        if (candidateTermSets.size() <= 0) {
             return nextAssocLevel;  // Not able to derive any items and return empty association level.
         }
 
@@ -237,13 +235,13 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
                 // We are looking for term-sets in one level, and all term-sets size in that level
                 // should be the same as the level number. i.e. in level 3, all term-sets should only contain 3 terms.
-                if(unionTermSet.size() != pPreviousLevelTermSets.mLevelNumber + 1) {
+                if (unionTermSet.size() != pPreviousLevelTermSets.mLevelNumber + 1) {
                     continue; // Too many terms and do not consider at this level
                 }
 
                 // If the newly derived term-set has already been added to the candidate frequent term-sets,
                 // then do not add it again.
-                if(this.hasTermSetsAlreadyContain(candidateTermSets, unionTermSet)) {
+                if (this.hasTermSetsAlreadyContain(candidateTermSets, unionTermSet)) {
                     continue;
                 }
 
@@ -251,7 +249,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 // some subsets of it is not frequent, we check if its all immediate subset are
                 // in the previous association level, if one of the term-set is missing, then it will not
                 // be a candidate set.
-                if(this.someImmediateSubsetsAreNotFrequent(pPreviousLevelTermSets.mAllFrequentQueryTermSets, unionTermSet)) {
+                if (this.someImmediateSubsetsAreNotFrequent(pPreviousLevelTermSets.mAllFrequentQueryTermSets, unionTermSet)) {
                     continue;
                 }
 
@@ -278,7 +276,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
     protected boolean hasTermSetsAlreadyContain(LinkedHashSet<QueryTermSet> pCandidateTermSets, QueryTermSet pTermSet) {
         for (QueryTermSet currentCandidateTermSet : pCandidateTermSets) {
-            if(currentCandidateTermSet.mAllTerms.containsAll(pTermSet.mAllTerms)) {
+            if (currentCandidateTermSet.mAllTerms.containsAll(pTermSet.mAllTerms)) {
                 return true;
             }
         }
@@ -292,7 +290,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
             QueryTermSet subsetTermSet = new QueryTermSet();
 
             for (ExpandedTerm term2 : pTermSetBeingDerived.mAllTerms) {
-                if(term1.term().termStem().equals(term2.term().termStem())) {
+                if (term1.term().termStem().equals(term2.term().termStem())) {
                     continue;
                 }
                 subsetTermSet.mAllTerms.add(term2);
@@ -315,7 +313,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 // Multiply 1.0 to cast the type to double before division.
                 documentRelativeFrequency = (currentCandidateTermSet.getDocumentFrequency() * 1.0) / (totalNumOfDocuments * 1.0);
 
-                if(documentRelativeFrequency >= pRelativeMinSupportThreshold) {
+                if (documentRelativeFrequency >= pRelativeMinSupportThreshold) {
                     resultSet.add(currentCandidateTermSet);
                 }
             } catch (Exception error) {
@@ -341,7 +339,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
     protected boolean someImmediateSubsetsAreNotFrequent(LinkedHashSet<QueryTermSet> pPreviousLevelFrequentTermSets,
                                                          QueryTermSet pCheckingTermSet) {
         for (QueryTermSet immediateSubset : this.deriveAllImmediateSubsets(pCheckingTermSet)) {
-            if( ! this.hasTermSetsAlreadyContain(pPreviousLevelFrequentTermSets, immediateSubset)) {
+            if (!this.hasTermSetsAlreadyContain(pPreviousLevelFrequentTermSets, immediateSubset)) {
                 return true;
             }
         }
@@ -358,15 +356,6 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         return this.mTermSetRelativeMinSupport;
     }
 
-    public int getProximityDistance() {
-        return this.mProximityDistance;
-    }
-
-    public int getMaximumAssociationLevel() {
-        return this.mMaximumAssociationLevel;
-    }
-
-
     /*
      *
      *  Setter methods
@@ -376,8 +365,16 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         this.mTermSetRelativeMinSupport = pValue;
     }
 
+    public int getProximityDistance() {
+        return this.mProximityDistance;
+    }
+
     public void setProximityDistance(int pValue) {
         this.mProximityDistance = pValue;
+    }
+
+    public int getMaximumAssociationLevel() {
+        return this.mMaximumAssociationLevel;
     }
 
     public void setMaximumAssociationLevel(int pValue) {
@@ -484,7 +481,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 Iterator<Object> firstTermPosIterator = firstTermPositions.iterator();
 
                 firstTermPosIteration:
-                while(firstTermPosIterator.hasNext()) {
+                while (firstTermPosIterator.hasNext()) {
                     int currentFirstTermPosition = (int) firstTermPosIterator.next();
                     int remainingProximityDistance = pProximityDistanceThreshold;
 
@@ -496,7 +493,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                     java.util.Iterator<ExpandedTerm> reversedAllTermsIterator = reversedAllTerms.descendingIterator();
                     while (reversedAllTermsIterator.hasNext()) {
                         ExpandedTerm comparingTerm = reversedAllTermsIterator.next();
-                        if(comparingTerm == firstTerm) {
+                        if (comparingTerm == firstTerm) {
                             // Do not compare itself,
                             // break because the list is iterated in reverse order, so comparingTerm == firstTerm
                             // comparingTerm must be the last term.
@@ -508,18 +505,18 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
                         Iterator<Object> comparingTermPosIterator = comparingTermPositions.iterator();
 
-                        while(comparingTermPosIterator.hasNext()) {
+                        while (comparingTermPosIterator.hasNext()) {
                             // We assume all positions are sorted in ascending order.
                             int currentComparingTermPosition = (int) comparingTermPosIterator.next();
                             int twoTermsProximityDistance = currentComparingTermPosition - currentFirstTermPosition;
 
                             // If the comparing term is located before the current first term position,
                             // then it is not necessary to consider it and just move the comparing term pointer forward.
-                            if(twoTermsProximityDistance <= 0) {
+                            if (twoTermsProximityDistance <= 0) {
                                 continue;
                             }
 
-                            if(twoTermsProximityDistance > remainingProximityDistance) {
+                            if (twoTermsProximityDistance > remainingProximityDistance) {
                                 // If the comparing term is too far away from the current first term position we
                                 // are comparing, there is no need to consider the current first term position anymore,
                                 // because any further comparing terms will have a farther distance and thus
@@ -564,7 +561,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
          *
          */
         protected ExpandedTerm getTermSetFirstElement(LinkedHashSet<ExpandedTerm> pTheList) {
-            if(pTheList.size() <= 0) {
+            if (pTheList.size() <= 0) {
                 return null;
             }
             return pTheList.iterator().next();
@@ -576,20 +573,20 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
             // Get all the document IDs for each term, and then do set intersection operation to
             // find which documents has all terms.
             ExpandedTerm firstTerm = this.getTermSetFirstElement(pAllTerms);
-            if(firstTerm == null) {
+            if (firstTerm == null) {
                 return hasAllTermsDocumentIDs;
             }
 
             ScalaSupport.foreachMap(firstTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
                 @Override
                 public void accept(Tuple2<Object, ArrayBuffer<Object>> pDocumentContainFirstTerm) {
-                    int documentIDContainFirstTerm = (int) pDocumentContainFirstTerm._1;
+                    int documentIDContainFirstTerm = (int) pDocumentContainFirstTerm._1();
                     hasAllTermsDocumentIDs.add(documentIDContainFirstTerm);
                 }
             });
 
             for (ExpandedTerm comparingTerm : pAllTerms) {
-                if(comparingTerm == firstTerm) {
+                if (comparingTerm == firstTerm) {
                     continue;  // Do not intersect itself.
                 }
 
@@ -597,7 +594,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 ScalaSupport.foreachMap(comparingTerm.term().filePositionMap(), new Consumer<Tuple2<Object, ArrayBuffer<Object>>>() {
                     @Override
                     public void accept(Tuple2<Object, ArrayBuffer<Object>> pDocumentContainCurrentTerm) {
-                        int documentIDContainCurrentTerm = (int) pDocumentContainCurrentTerm._1;
+                        int documentIDContainCurrentTerm = (int) pDocumentContainCurrentTerm._1();
                         currentComparingDocumentIDs.add(documentIDContainCurrentTerm);
                     }
                 });
@@ -632,28 +629,28 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
          *
          */
         public double getAveragedWeight() throws Exception {
-            if( ! mIsValueUpdate) {
+            if (!mIsValueUpdate) {
                 throw new Exception(this.NOT_UP_TO_DATE_ERROR_MSG);
             }
             return this.mAveragedWeight;
         }
 
         public int getDocumentFrequency() throws Exception {
-            if( ! mIsValueUpdate) {
+            if (!mIsValueUpdate) {
                 throw new Exception(this.NOT_UP_TO_DATE_ERROR_MSG);
             }
             return this.mDocumentFrequency;
         }
 
         public double getInvertedDocumentFrequency() throws Exception {
-            if( ! mIsValueUpdate) {
+            if (!mIsValueUpdate) {
                 throw new Exception(this.NOT_UP_TO_DATE_ERROR_MSG);
             }
             return this.mInvertedDocumentFrequency;
         }
 
         public HashMap<Integer, Integer> getDocumentToTermSetFrequenciesMap() throws Exception {
-            if( ! mIsValueUpdate) {
+            if (!mIsValueUpdate) {
                 throw new Exception(this.NOT_UP_TO_DATE_ERROR_MSG);
             }
             return this.mDocumentToTermSetFrequenciesMap;
