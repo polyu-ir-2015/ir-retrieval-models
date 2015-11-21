@@ -169,11 +169,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         return pQueryTermWeight *
                     (
                             Math.log(
-                                    1 + Math.log(1 + pDocumentTermFrequency)
+                                    1.0 + Math.log(1.0 + pDocumentTermFrequency)
                             )
                                     /
                             (
-                                    1 - pPivotBParameter + pPivotBParameter *
+                                    1.0 - pPivotBParameter + pPivotBParameter *
                                             (pDocumentVectorLength / pAverageDocumentVectorLength)
                             )
                     ) * pQueryTermIDF;

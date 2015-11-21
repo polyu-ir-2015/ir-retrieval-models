@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  */
 public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
-    private double mTermSetRelativeSupport;
+    private double mTermSetRelativeMaxSupport;
     private int mProximityDistance;
     private int mMaximumAssociationLevel;
 
@@ -48,13 +48,13 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         // The proximity distance means how far can a term be apart from another term to be considered as a term set.
         // Setting 10 means term A and term B must only have 9 other terms in order to be a term set.
         // Adjusting this value to a high distance may result in higher computation time.
-        this.mProximityDistance = 10;
+        this.mProximityDistance = 46;
 
-        // For all term-sets, the frequent of the term-set must exceed the threshold below to be considered as frequent.
+        // For all term-sets, the frequent of the term-set must below the threshold in order to be considered as frequent.
         // Adjusting this value will greatly impact the retrieval result.
         // The unit is measured in number of documents of the term (i.e document frequency) divided by total num. of documents.
         // Set it between 0 to 1.
-        this.mTermSetRelativeSupport = 0.005;
+        this.mTermSetRelativeMaxSupport = 0.014;
 
         // To prevent heavy computation, you can limit the program when to stop deriving next term-set level here.
         // You can set to Integer.MAX_VALUE for generating all possible association levels.
@@ -74,7 +74,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         ArrayList<AssociationLevel> allFrequentAssociationLevels = this.generateAllAssocLevelWithFrequentTermSets(
                 pQuery, 
                 this.mProximityDistance, 
-                this.mTermSetRelativeSupport,
+                this.mTermSetRelativeMaxSupport,
                 this.mMaximumAssociationLevel
         );
 
@@ -130,7 +130,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
      *
      */
     protected ArrayList<AssociationLevel> generateAllAssocLevelWithFrequentTermSets(Query pQuery, int pProximityDistance,
-                                                                                    double pTermSetRelativeSupport, int pMaxAssocLevel) {
+                                                                                    double pTermSetRelativeMaxSupport, int pMaxAssocLevel) {
         // This list stores all association level, which stores query term-sets.
         ArrayList<AssociationLevel> allFrequentAssocLevels = new ArrayList<>();
 
@@ -138,7 +138,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         AssociationLevel firstAssocLevel = this.deriveFirstLevelWithFrequentTermSets(
                 pQuery,
                 pProximityDistance,
-                pTermSetRelativeSupport
+                pTermSetRelativeMaxSupport
         );
         allFrequentAssocLevels.add(firstAssocLevel);
 
@@ -150,7 +150,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
             AssociationLevel currentLevel = this.deriveNextLevelWithFrequentTermSets(
                     previousLevel,
                     pProximityDistance,
-                    pTermSetRelativeSupport
+                    pTermSetRelativeMaxSupport
             );
 
             if(currentLevel.getNumberOfFrequentTermSets() <= 0) {
@@ -165,7 +165,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
     }
 
     protected AssociationLevel deriveFirstLevelWithFrequentTermSets(Query pQuery, int pProximityDistance,
-                                                                    double pTermSetRelativeSupport) {
+                                                                    double pTermSetRelativeMaxSupport) {
         AssociationLevel firstAssocLevel = new AssociationLevel();
         firstAssocLevel.mLevelNumber = 1;
 
@@ -189,14 +189,14 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         // If not, kick it out from the candidate set.
         // Note: We treat all user inputs are important, so we do not check for min. support
         // for first level to let all terms to be included in the calculation.
-        // this.filterCandidateSetsBySupport(candidateTermSets, pTermSetAbsoluteSupport);
+        // candidateTermSets = this.filterCandidateSetsBySupport(candidateTermSets, pTermSetAbsoluteSupport);
 
         firstAssocLevel.mAllFrequentQueryTermSets = candidateTermSets;
         return firstAssocLevel;
     }
 
     protected AssociationLevel deriveNextLevelWithFrequentTermSets(AssociationLevel pPreviousLevelTermSets,
-                                                                   int pProximityDistance, double pTermSetRelativeSupport) {
+                                                                   int pProximityDistance, double pTermSetRelativeMaxSupport) {
         AssociationLevel nextAssocLevel = new AssociationLevel();
         nextAssocLevel.mLevelNumber = pPreviousLevelTermSets.mLevelNumber + 1;
 
@@ -216,7 +216,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
         // For each candidate query term, we verify if it is frequent or not.
         // If not, kick it out from the candidate set.
-        candidateTermSets = this.filterCandidateSetsBySupport(candidateTermSets, pTermSetRelativeSupport);
+        candidateTermSets = this.filterCandidateSetsBySupport(candidateTermSets, pTermSetRelativeMaxSupport);
 
         nextAssocLevel.mAllFrequentQueryTermSets = candidateTermSets;
         return nextAssocLevel;
@@ -305,7 +305,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
     }
 
     protected LinkedHashSet<QueryTermSet> filterCandidateSetsBySupport(LinkedHashSet<QueryTermSet> pCandidateSet,
-                                                                       double pRelativeSupportThreshold) {
+                                                                       double pRelativeMaxSupportThreshold) {
         LinkedHashSet<QueryTermSet> resultSet = new LinkedHashSet<>();
 
         for (QueryTermSet currentCandidateTermSet : pCandidateSet) {
@@ -315,7 +315,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                 // Multiply 1.0 to cast the type to double before division.
                 documentRelativeFrequency = (currentCandidateTermSet.getDocumentFrequency() * 1.0) / (totalNumOfDocuments * 1.0);
 
-                if(documentRelativeFrequency >= pRelativeSupportThreshold) {
+                if(documentRelativeFrequency <= pRelativeMaxSupportThreshold) {
                     resultSet.add(currentCandidateTermSet);
                 }
             } catch (Exception error) {
@@ -354,8 +354,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
      *  Getter methods
      *
      */
-    public double getTermSetAbsoluteSupport() {
-        return this.mTermSetRelativeSupport;
+    public double getTermSetRelativeMaxSupport() {
+        return this.mTermSetRelativeMaxSupport;
     }
 
     public int getProximityDistance() {
@@ -372,8 +372,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
      *  Setter methods
      *
      */
-    public void setTermSetAbsoluteSupport(double pValue) {
-        this.mTermSetRelativeSupport = pValue;
+    public void setTermSetRelativeMaxSupport(double pValue) {
+        this.mTermSetRelativeMaxSupport = pValue;
     }
 
     public void setProximityDistance(int pValue) {

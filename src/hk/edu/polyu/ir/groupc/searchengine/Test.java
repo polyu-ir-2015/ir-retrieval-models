@@ -2,11 +2,13 @@ package hk.edu.polyu.ir.groupc.searchengine;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
-import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.ExtendedBooleanModel;
-import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.SetBasedVectorSpaceModel;
 import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.VectorSpaceModel;
 
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.*;
 
 /**
  * Created by beenotung on 11/12/15.
@@ -53,7 +55,7 @@ public class Test {
 
             @Override
             public String QUERY() {
-                return QUERY_T;
+                return QUERY_TDN;
             }
 
             @Override
@@ -62,13 +64,110 @@ public class Test {
             }
         };
 
-        RetrievalModel model = new SetBasedVectorSpaceModel();
-        ((VectorSpaceModel) model).setNormalizationType(VectorSpaceModel.NormalizationType.COSINE);
+        SearchResultFactory.setRunId("GROUP-C");
 
-        SearchResultFactory.setRunId("GROUP-C-" + model.getClass().getSimpleName());
-        launcher.start(model, "res/result-" + model.getClass().getSimpleName() + ".txt", 100);
+        // Run each model and generate a set of result text files.
+        ArrayList<ModelSetting> allModelSettings = getAllModels();
+//        for (ModelSetting modelSetting : allModelSettings) {
+//            System.out.println("=========================================================");
+//            launcher.start(modelSetting.model, modelSetting.getResultFilePath(), modelSetting.numberOfRetrieval);
+//            System.out.println("=========================================================");
+//        }
+
+        // For each generated text file, input it into the trec_eval_cmd.exe evaluation program and extract some output values.
+        Runtime runtime = Runtime.getRuntime();
+        String currentPath = System.getProperty("user.dir");
+        for (ModelSetting allModelSetting : allModelSettings) {
+            String evalProgramPath = currentPath + "\\res\\trec_eval_cmd.exe";
+            String judgePath = currentPath + "\\res\\judgerobust";
+            String resultPath = currentPath + "\\" + allModelSetting.getResultFilePath();
+
+            ArrayList<String> command = new ArrayList<>();
+            command.add(evalProgramPath);
+            command.add("-a"); // Show detailed evaluation report
+            command.add(judgePath);
+            command.add(resultPath);
+            try {
+                ProcessBuilder builder = new ProcessBuilder(command);
+                builder.redirectErrorStream(true);
+                builder.directory(new File(System.getenv("temp")));
+
+                Process process = builder.start();
+                BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line;
+                PrintWriter writer = new PrintWriter(allModelSetting.getEvalFilePath());
+                while ((line = input.readLine()) != null) {
+                    writer.println(line);
+                }
+                process.waitFor();
+                writer.flush();
+                writer.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         System.out.println("end");
     }
 
+    private static ArrayList<ModelSetting> getAllModels() {
+        ArrayList<ModelSetting> allModels = new ArrayList<>();
+        VectorSpaceModel model;
+        ModelSetting modelSetting;
+
+        ////////////////////////////////////////////////
+        // Change your testing model's settings here. //
+        ////////////////////////////////////////////////
+        model = new VectorSpaceModel();
+        model.setNormalizationType(VectorSpaceModel.NormalizationType.NONE);
+        modelSetting = new ModelSetting();
+        modelSetting.model = model;
+        modelSetting.customDescription = "NONE";
+        modelSetting.numberOfRetrieval = 100;
+        allModels.add(modelSetting);
+
+        model = new VectorSpaceModel();
+        model.setNormalizationType(VectorSpaceModel.NormalizationType.COSINE);
+        modelSetting = new ModelSetting();
+        modelSetting.model = model;
+        modelSetting.customDescription = "COSINE";
+        modelSetting.numberOfRetrieval = 100;
+        allModels.add(modelSetting);
+
+        model = new VectorSpaceModel();
+        model.setNormalizationType(VectorSpaceModel.NormalizationType.PIVOT);
+        modelSetting = new ModelSetting();
+        modelSetting.model = model;
+        modelSetting.customDescription = "PIVOT";
+        modelSetting.numberOfRetrieval = 100;
+        allModels.add(modelSetting);
+
+        model = new VectorSpaceModel();
+        model.setNormalizationType(VectorSpaceModel.NormalizationType.BM25);
+        modelSetting = new ModelSetting();
+        modelSetting.model = model;
+        modelSetting.customDescription = "BM25";
+        modelSetting.numberOfRetrieval = 100;
+        allModels.add(modelSetting);
+        ////////////////////////////////////////////////
+        // Change your testing model's settings here. //
+        ////////////////////////////////////////////////
+
+        return allModels;
+    }
+
+    private static class ModelSetting {
+        public RetrievalModel model;
+        public String customDescription;
+        public int numberOfRetrieval;
+
+        public String getResultFilePath() {
+            return "res\\result\\result-" + model.getClass().getSimpleName() + "-" + customDescription + "-" + numberOfRetrieval + ".txt";
+        }
+
+        public String getEvalFilePath() {
+            return "res\\result\\eval-" + model.getClass().getSimpleName() + "-" + customDescription + "-" + numberOfRetrieval + ".txt";
+        }
+    }
 }

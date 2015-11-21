@@ -1,12 +1,6 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
-import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResult;
-import hk.edu.polyu.ir.groupc.searchengine.model.datasource.SearchResultFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  *
@@ -27,8 +21,9 @@ abstract public class RetrievalModelWithRanking extends RetrievalModel {
     // and values are ranking score decimal number.
     abstract protected HashMap<Integer, Double> getRankedDocumentsWithoutSort(Query pQuery);
 
+
     @Override
-    public SearchResult search(Query pQuery, int pNumOfRetrievalDocument) {
+    public List<RetrievalDocument> search(Query pQuery) {
         HashMap<Integer, Double> rankedDocuments = this.getRankedDocumentsWithoutSort(pQuery);
 
         // Help to sort the ranked documents and return an array list of RetrievalDocument objects
@@ -49,9 +44,7 @@ abstract public class RetrievalModelWithRanking extends RetrievalModel {
             }
         });
 
-        // TODO: need to remove extra items based on the number of pNumOfRetrievalDocument required.
-
-        return SearchResultFactory.create(pQuery, theArrayList);
+        return theArrayList;
     }
 
 }

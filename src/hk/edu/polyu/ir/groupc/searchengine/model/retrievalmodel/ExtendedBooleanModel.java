@@ -61,7 +61,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
             while(documentsIterator.hasNext()) {
                 Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
                 int documentID = (int) document._1;
-                int documentTermFrequency = document._2.length();
+                int termFrequencyInDocument = document._2.length();
                 int maximumTFInDocument = InvertedIndexAdapter.getInstance().getMaximumTermFrequencyInDocument(documentID);
 
                 if( ! termWeightsPerDocument.containsKey(documentID)) {
@@ -71,7 +71,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
                 // Save all the weights inside each document for further computation.
                 termWeightsPerDocument.get(documentID).add(
                         this.getNormalizedTermWeight(
-                                documentTermFrequency, maximumTFInDocument,
+                                termFrequencyInDocument, maximumTFInDocument,
                                 queryTermIDF, maximumIDFInCollection)
                 );
 
@@ -110,7 +110,8 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     protected double getNormalizedTermWeight(int pDocumentTermFrequency, int pMaximumTFInDocument,
                                            double pQueryTermIDF, double pMaximumIDFInCollection) {
         // The term weight is normalized to 0 to 1.
-        return (pDocumentTermFrequency / pMaximumTFInDocument) * (pQueryTermIDF / pMaximumIDFInCollection);
+        // Multiply 1.0 to cast the variable before division.
+        return (pDocumentTermFrequency * 1.0 / pMaximumTFInDocument * 1.0) * (pQueryTermIDF / pMaximumIDFInCollection);
     }
 
     protected double getDocumentRankingScore(OperationType pOperationType, double pModelPNormParameter,
@@ -128,7 +129,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
             }
         }
 
-        documentRankingScore /= pNumberOfQueryTerms;
+        documentRankingScore /= (pNumberOfQueryTerms * 1.0);
         documentRankingScore = Math.pow(documentRankingScore, 1.0 / pModelPNormParameter);
         if(pOperationType == OperationType.AND) {
             documentRankingScore = 1.0 - documentRankingScore;
