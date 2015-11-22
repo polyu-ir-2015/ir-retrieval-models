@@ -66,8 +66,8 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
-        // Get the average document vector length for further computation.
-        double averageDocumentVectorLength = InvertedIndexAdapter.getInstance().getMedianDocumentVectorLength();
+        // Get the median document vector length for further computation.
+        double medianDocumentVectorLength = InvertedIndexAdapter.getInstance().getMedianDocumentVectorLength();
 
         // Get all frequent query term-sets based on the input query.
         // The structure is <Term-set level, A set of query term-sets in that level>
@@ -108,7 +108,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                                 queryTermSetIDF,
                                 documentTermSetFrequency,
                                 documentVectorLength,
-                                averageDocumentVectorLength,
+                                medianDocumentVectorLength,
                                 this.mPivotBParameter.value,
                                 this.mBM25KParameter.value,
                                 this.mNormalizationType
