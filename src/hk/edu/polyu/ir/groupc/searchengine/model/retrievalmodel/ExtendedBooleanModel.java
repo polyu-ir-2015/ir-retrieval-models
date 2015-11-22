@@ -108,6 +108,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         return retrievedDocuments;
     }  // End getRankedDocumentsWithoutSort()
 
+
     /*
      *
      *   Term weighting, normalization and document scoring functions
