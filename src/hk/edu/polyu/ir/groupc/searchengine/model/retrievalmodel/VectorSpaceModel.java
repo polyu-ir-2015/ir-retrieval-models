@@ -14,83 +14,64 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ *
  * Created by nEbuLa on 14/11/2015.
- * <p>
+ *
  * Vector space model
- * <p>
+ *
  * Description:     This model make implements the vector space model idea taught in COMP433
- * classes. Besides the basics, additional weighting and normalization calculation
- * methods are implemented, which includes pivot document length normalization
- * and BM25.
- * <p>
+ *                  classes. Besides the basics, additional weighting and normalization calculation
+ *                  methods are implemented, which includes pivot document length normalization
+ *                  and BM25.
+ *
  * References:      https://en.wikipedia.org/wiki/Vector_space_model
- * https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
- * https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
+ *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
+ *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
+ *
  */
 public class VectorSpaceModel extends RetrievalModelWithRanking {
 
     protected final Parameter<Double> mPivotBParameter;
     protected final Parameter<Double> mBM25KParameter;
-    private final List<String> MODES;
-    private final List<Parameter> Parameters;
+    protected final List<String> cModes;
+    protected final List<Parameter> cParameters;
     protected NormalizationType mNormalizationType;
 
-    {
-        MODES = new LinkedList<>();
-        for (NormalizationType normalizationType : NormalizationType.values()) {
-            MODES.add(normalizationType.toString());
+    public enum NormalizationType {
+        NONE {
+            @Override
+            public String toString() {
+                return "No normalization";
+            }
+        }, COSINE {
+            @Override
+            public String toString() {
+                return "Cosine similarity";
+            }
+        }, PIVOT {
+            @Override
+            public String toString() {
+                return "Pivoted Length Normalization";
+            }
+        }, BM25  {
+            @Override
+            public String toString() {
+                return "Okapi BM25";
+            }
         }
-        Parameters = new LinkedList<>();
-        mPivotBParameter = new Parameter<Double>("Pivot B", 0.01, 10.0, 0.75);
-        mBM25KParameter = new Parameter<Double>("BM25K", 0.01, 10.0, 1.5);
-        Parameters.add(mPivotBParameter);
-        Parameters.add(mBM25KParameter);
     }
 
     public VectorSpaceModel() {
-        // By default, the program uses inner product only to calculate the rank.
-        this.mNormalizationType = NormalizationType.NONE;
-
-        // The b parameter is usually chosen (in absence of an advanced optimization) to be 0.75.
-        this.mPivotBParameter.value = 0.75;
-
-        // The k parameter is usually chosen (in absence of an advanced optimization) to be 1.5.
-        this.mBM25KParameter.value = 1.5;
-    }
-//    protected double mPivotBParameter;
-//    protected double mBM25KParameter;
-
-    @Override
-    public List<String> getModes() {
-        return MODES;
-    }
-
-    @Override
-    public String getDefaultMode() {
-        return NormalizationType.NONE.toString();
-    }
-
-    @Override
-    public String getMode() {
-        return mNormalizationType.toString();
-    }
-
-    @Override
-    public void setMode(String s) {
-        boolean found = false;
+        cModes = new LinkedList<>();
         for (NormalizationType normalizationType : NormalizationType.values()) {
-            if (normalizationType.toString().equals(s)) {
-                mNormalizationType = normalizationType;
-                found = true;
-                break;
-            }
+            cModes.add(normalizationType.toString());
         }
-        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
-    }
 
-    @Override
-    public List<Parameter> getParameters() {
-        return Parameters;
+        cParameters = new LinkedList<>();
+        mPivotBParameter = new Parameter<>("Pivot B", 0.01, 1.0, 0.75);
+        mBM25KParameter = new Parameter<>("BM25K", 0.01, 10.0, 1.5);
+        cParameters.add(mPivotBParameter);
+        cParameters.add(mBM25KParameter);
     }
 
     @Override
@@ -98,8 +79,8 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
-        // Get the average document vector length for further computation.
-        double averageDocumentVectorLength = InvertedIndexAdapter.getInstance().getAverageDocumentVectorLength();
+        // Get the median document vector length for further computation.
+        double medianDocumentVectorLength = InvertedIndexAdapter.getInstance().getMedianDocumentVectorLength();
 
         ExpandedTerm[] expendedQueryTerms = pQuery.expandedTerms();
 
@@ -128,7 +109,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         queryTermIDF,
                         documentTermFrequency,
                         documentVectorLength,
-                        averageDocumentVectorLength,
+                        medianDocumentVectorLength,
                         this.mPivotBParameter.value,
                         this.mBM25KParameter.value,
                         this.mNormalizationType
@@ -139,6 +120,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         return retrievedDocuments;
     }  // End getRankedDocumentsWithoutSort()
 
+
     /*
      *
      *   Scoring helper functions
@@ -146,7 +128,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
      */
     protected void accumulateDocumentScore(HashMap<Integer, Double> pRetrievalDocuments, int pDocumentID,
                                            double pQueryTermWeight, double pQueryTermIDF, int pDocumentTermFrequency,
-                                           double pDocumentVectorLength, double pAverageDocumentVectorLength,
+                                           double pDocumentVectorLength, double pMedianDocumentVectorLength,
                                            double pPivotBParameter, double pBM25KParameter,
                                            NormalizationType pNormalizationType) {
         double retrievedDocumentScore = pRetrievalDocuments.get(pDocumentID);
@@ -171,7 +153,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         pQueryTermIDF,
                         pDocumentTermFrequency,
                         pDocumentVectorLength,
-                        pAverageDocumentVectorLength,
+                        pMedianDocumentVectorLength,
                         pPivotBParameter);
                 break;
             case BM25:
@@ -180,7 +162,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         pQueryTermIDF,
                         pDocumentTermFrequency,
                         pDocumentVectorLength,
-                        pAverageDocumentVectorLength,
+                        pMedianDocumentVectorLength,
                         pPivotBParameter,
                         pBM25KParameter);
                 break;
@@ -189,6 +171,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         // Update the ranking score saved.
         pRetrievalDocuments.put(pDocumentID, retrievedDocumentScore);
     }
+
 
     /*
      *
@@ -207,7 +190,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
 
     protected double getRankingByPivotNormalization(double pQueryTermWeight, double pQueryTermIDF,
                                                     int pDocumentTermFrequency, double pDocumentVectorLength,
-                                                    double pAverageDocumentVectorLength, double pPivotBParameter) {
+                                                    double pMedianDocumentVectorLength, double pPivotBParameter) {
         return pQueryTermWeight *
                 (
                         Math.log(
@@ -216,13 +199,13 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                                 /
                                 (
                                         1.0 - pPivotBParameter + pPivotBParameter *
-                                                (pDocumentVectorLength / pAverageDocumentVectorLength)
+                                                (pDocumentVectorLength / pMedianDocumentVectorLength)
                                 )
                 ) * pQueryTermIDF;
     }
 
     protected double getRankingByBM25(double pQueryTermWeight, double pQueryTermIDF, int pDocumentTermFrequency,
-                                      double pDocumentVectorLength, double pAverageDocumentVectorLength,
+                                      double pDocumentVectorLength, double pMedianDocumentVectorLength,
                                       double pPivotBParameter, double pBM25KParameter) {
         return pQueryTermWeight *
                 (
@@ -234,15 +217,52 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                                         pDocumentTermFrequency +
                                                 pBM25KParameter * (
                                                         1.0 - pPivotBParameter + pPivotBParameter *
-                                                                (pDocumentVectorLength / pAverageDocumentVectorLength)
+                                                                (pDocumentVectorLength / pMedianDocumentVectorLength)
                                                 )
                                 )
                 ) * pQueryTermIDF;
     }
 
-    public void setBm25KParameter(double pValue) {
-        this.mBM25KParameter.value = pValue;
+
+    /*
+     *
+     *   Modes and parameters setter and getter method
+     *
+     */
+    @Override
+    public List<String> getModes() {
+        return cModes;
     }
+
+    @Override
+    public String getDefaultMode() {
+        // By default, the program uses inner product only to calculate the rank.
+        return NormalizationType.NONE.toString();
+    }
+
+    @Override
+    public String getMode() {
+        return mNormalizationType.toString();
+    }
+
+    @Override
+    public void setMode(String s) {
+        boolean found = false;
+        for (NormalizationType normalizationType : NormalizationType.values()) {
+            if (normalizationType.toString().equals(s)) {
+                mNormalizationType = normalizationType;
+                found = true;
+                break;
+            }
+        }
+        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
+    }
+
+    @Override
+    public List<Parameter> getParameters() {
+        return cParameters;
+    }
+
 
     /*
      *
@@ -253,6 +273,15 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         return this.mNormalizationType;
     }
 
+    public double getBM25KParameter() {
+        return this.mBM25KParameter.value;
+    }
+
+    public double getPivotBParameter() {
+        return this.mPivotBParameter.value;
+    }
+
+
     /*
      *
      *   Setter methods
@@ -262,25 +291,12 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         this.mNormalizationType = pType;
     }
 
-    public double getPivotBParameter() {
-        return this.mPivotBParameter.value;
-    }
-
     public void setPivotBParameter(double pValue) {
         this.mPivotBParameter.value = pValue;
     }
 
-    public double getBM25KParameter() {
-        return this.mBM25KParameter.value;
-    }
-
-    public enum NormalizationType {
-        NONE {
-            @Override
-            public String toString() {
-                return "No Normalization";
-            }
-        }, COSINE, PIVOT, BM25
+    public void setBm25KParameter(double pValue) {
+        this.mBM25KParameter.value = pValue;
     }
 
 }

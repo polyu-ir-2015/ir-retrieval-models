@@ -5,15 +5,17 @@ import hk.edu.polyu.ir.groupc.searchengine.model.result.RetrievalDocument;
 import java.util.*;
 
 /**
+ *
  * Created by nEbuLa on 14/11/2015.
- * <p>
+ *
  * Description:     This class provides method for converting a hash map data structure
- * to an array list which contains RetrievalDocument objects. It also
- * provides sorting method to sort the array list by ranking in descending
- * order.
- * <p>
- * It is suggested that any retrieval model that outputs ranking should
- * inherit this class.
+ *                  to an array list which contains RetrievalDocument objects. It also
+ *                  provides sorting method to sort the array list by ranking in descending
+ *                  order.
+ *
+ *                  It is suggested that any retrieval model that outputs ranking should
+ *                  inherit this class.
+ *
  */
 abstract public class RetrievalModelWithRanking extends RetrievalModel {
 

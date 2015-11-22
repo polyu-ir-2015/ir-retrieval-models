@@ -15,73 +15,38 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ *
  * Created by nEbuLa on 14/11/2015.
- * <p>
+ *
  * Extended Boolean Model
- * <p>
+ *
  * Description:     This model make uses of the advantages of vector space model (which documents can be ranked)
- * and the boolean model (which allows boolean operations). The combined implementation
- * of these two models results in the extended boolean model.
- * <p>
+ *                  and the boolean model (which allows boolean operations). The combined implementation
+ *                  of these two models results in the extended boolean model.
+ *
  * References:      https://en.wikipedia.org/wiki/Extended_Boolean_model
+ *
  */
 public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
-    //    protected double mModelPNormParameter;
     protected final Parameter<Double> mModelPNormParameter;
-    private final List<String> MODES;
-    private final List<Parameter> Parameters;
+    protected final List<String> cModes;
+    protected final List<Parameter> cParameters;
     protected OperationType mOperationType;
 
-    {
-        MODES = new LinkedList<>();
-        for (OperationType operationType : OperationType.values()) {
-            MODES.add(operationType.toString());
-        }
-        Parameters = new LinkedList<>();
-        mModelPNormParameter = new Parameter<Double>("Model P Norm", 0.01d, 10.0, 2.0);
-        Parameters.add(mModelPNormParameter);
+    public enum OperationType {
+        AND, OR
     }
 
     public ExtendedBooleanModel() {
-        // By default, we treat spaces between query terms as AND boolean operations.
-        this.mOperationType = OperationType.AND;
-
-        // Setting the parameter p to 2 is said to be good.
-        this.mModelPNormParameter.value = 2.0;
-    }
-
-    @Override
-    public List<String> getModes() {
-        return MODES;
-    }
-
-    @Override
-    public String getDefaultMode() {
-        return OperationType.AND.toString();
-    }
-
-    @Override
-    public String getMode() {
-        return mOperationType.toString();
-    }
-
-    @Override
-    public void setMode(String newMode) {
-        boolean found = false;
+        cModes = new LinkedList<>();
         for (OperationType operationType : OperationType.values()) {
-            if (operationType.toString().equals(newMode)) {
-                mOperationType = operationType;
-                found = true;
-                break;
-            }
+            cModes.add(operationType.toString());
         }
-        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
-    }
 
-    @Override
-    public List<Parameter> getParameters() {
-        return Parameters;
+        cParameters = new LinkedList<>();
+        mModelPNormParameter = new Parameter<>("Model P Norm", 0.01d, 10.0, 2.0);
+        cParameters.add(mModelPNormParameter);
     }
 
     @Override
@@ -179,6 +144,46 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         return documentRankingScore;
     }
 
+
+    /*
+     *
+     *   Modes and parameters setter and getter method
+     *
+     */
+    @Override
+    public List<String> getModes() {
+        return cModes;
+    }
+
+    @Override
+    public String getDefaultMode() {
+        return OperationType.AND.toString();
+    }
+
+    @Override
+    public String getMode() {
+        return mOperationType.toString();
+    }
+
+    @Override
+    public void setMode(String newMode) {
+        boolean found = false;
+        for (OperationType operationType : OperationType.values()) {
+            if (operationType.toString().equals(newMode)) {
+                mOperationType = operationType;
+                found = true;
+                break;
+            }
+        }
+        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
+    }
+
+    @Override
+    public List<Parameter> getParameters() {
+        return cParameters;
+    }
+
+
     /*
      *
      *   Getter methods
@@ -187,6 +192,11 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     public OperationType getOperationType() {
         return this.mOperationType;
     }
+
+    public double getModelPNormParameter() {
+        return this.mModelPNormParameter.value;
+    }
+
 
     /*
      *
@@ -197,17 +207,10 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         this.mOperationType = pOperatorType;
     }
 
-    public double getModelPNormParameter() {
-        return this.mModelPNormParameter.value;
-    }
-
     public void setModelPNormParameter(double pModelPNormParameter) {
         this.mModelPNormParameter.value = pModelPNormParameter;
     }
 
-    public enum OperationType {
-        AND, OR
-    }
 
 }
 

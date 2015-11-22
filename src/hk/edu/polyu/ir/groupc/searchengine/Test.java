@@ -2,6 +2,7 @@ package hk.edu.polyu.ir.groupc.searchengine;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
 import hk.edu.polyu.ir.groupc.searchengine.model.result.SearchResultFactory;
+import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.ExtendedBooleanModel;
 import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.VectorSpaceModel;
 
 import java.io.BufferedReader;
@@ -68,11 +69,11 @@ public class Test {
 
         // Run each model and generate a set of result text files.
         ArrayList<ModelSetting> allModelSettings = getAllModels();
-//        for (ModelSetting modelSetting : allModelSettings) {
-//            System.out.println("=========================================================");
-//            launcher.start(modelSetting.model, modelSetting.getResultFilePath(), modelSetting.numberOfRetrieval);
-//            System.out.println("=========================================================");
-//        }
+        for (ModelSetting modelSetting : allModelSettings) {
+            System.out.println("=========================================================");
+            launcher.start(modelSetting.model, modelSetting.getResultFilePath(), modelSetting.numberOfRetrieval);
+            System.out.println("=========================================================");
+        }
 
         // For each generated text file, input it into the trec_eval_cmd.exe evaluation program and extract some output values.
         Runtime runtime = Runtime.getRuntime();
@@ -148,6 +149,15 @@ public class Test {
         modelSetting = new ModelSetting();
         modelSetting.model = model;
         modelSetting.customDescription = "BM25";
+        modelSetting.numberOfRetrieval = 100;
+        allModels.add(modelSetting);
+
+        ExtendedBooleanModel extendedModel;
+        extendedModel = new ExtendedBooleanModel();
+        extendedModel.setOperationType(ExtendedBooleanModel.OperationType.AND);
+        modelSetting = new ModelSetting();
+        modelSetting.model = extendedModel;
+        modelSetting.customDescription = "";
         modelSetting.numberOfRetrieval = 100;
         allModels.add(modelSetting);
         ////////////////////////////////////////////////
