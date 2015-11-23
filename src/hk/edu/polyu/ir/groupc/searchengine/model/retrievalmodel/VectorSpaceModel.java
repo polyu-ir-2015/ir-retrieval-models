@@ -1,18 +1,20 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
+import hk.edu.polyu.ir.groupc.searchengine.Debug;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
-
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.mutable.ArrayBuffer;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- *
+ * <pre>
  * Created by nEbuLa on 14/11/2015.
  *
  * Vector space model
@@ -25,28 +27,51 @@ import java.util.HashMap;
  * References:      https://en.wikipedia.org/wiki/Vector_space_model
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
- *
+ * </pre>
  */
 public class VectorSpaceModel extends RetrievalModelWithRanking {
 
+    protected final Parameter<Double> mPivotBParameter;
+    protected final Parameter<Double> mBM25KParameter;
+    protected final List<String> cModes;
+    protected final List<Parameter<?extends Number>> cParameters;
+    protected NormalizationType mNormalizationType;
+
     public enum NormalizationType {
-        NONE, COSINE, PIVOT, BM25
+        NONE {
+            @Override
+            public String toString() {
+                return "No normalization";
+            }
+        }, COSINE {
+            @Override
+            public String toString() {
+                return "Cosine similarity";
+            }
+        }, PIVOT {
+            @Override
+            public String toString() {
+                return "Pivoted Length Normalization";
+            }
+        }, BM25  {
+            @Override
+            public String toString() {
+                return "Okapi BM25";
+            }
+        }
     }
 
-    protected NormalizationType mNormalizationType;
-    protected double mPivotBParameter;
-    protected double mBM25KParameter;
-
-
     public VectorSpaceModel() {
-        // By default, the program uses inner product only to calculate the rank.
-        this.mNormalizationType = NormalizationType.NONE;
+        cModes = new LinkedList<>();
+        for (NormalizationType normalizationType : NormalizationType.values()) {
+            cModes.add(normalizationType.toString());
+        }
 
-        // The b parameter is usually chosen (in absence of an advanced optimization) to be 0.75.
-        this.mPivotBParameter = 0.75;
-
-        // The k parameter is usually chosen (in absence of an advanced optimization) to be 1.5.
-        this.mBM25KParameter = 1.5;
+        cParameters = new LinkedList<>();
+        mPivotBParameter = new DoubleParameter("Pivot B", 0.01, 1.0, 0.75);
+        mBM25KParameter = new DoubleParameter("BM25K", 0.01, 10.0, 1.5);
+        cParameters.add(mPivotBParameter);
+        cParameters.add(mBM25KParameter);
     }
 
     @Override
@@ -54,8 +79,8 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         // retrievedDocuments will have a structure <Document ID, ranking score>
         HashMap<Integer, Double> retrievedDocuments = new HashMap<>();
 
-        // Get the average document vector length for further computation.
-        double averageDocumentVectorLength = InvertedIndexAdapter.getInstance().getAverageDocumentVectorLength();
+        // Get the median document vector length for further computation.
+        double medianDocumentVectorLength = InvertedIndexAdapter.getInstance().getMedianDocumentVectorLength();
 
         ExpandedTerm[] expendedQueryTerms = pQuery.expandedTerms();
 
@@ -64,14 +89,14 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
             double queryTermWeight = expendedQueryTerm.weight();
             double queryTermIDF = InvertedIndexAdapter.getInstance().getInvertedDocumentFrequency(expendedQueryTerm.term());
 
-            Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
-            while(documentsIterator.hasNext()) {
+            Iterator<Tuple2<Object, ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
+            while (documentsIterator.hasNext()) {
                 Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
-                int documentID = (int) document._1;
-                int documentTermFrequency = document._2.length();
+                int documentID = (int) document._1();
+                int documentTermFrequency = document._2().length();
                 double documentVectorLength = InvertedIndexAdapter.getInstance().getDocumentVectorLength(documentID);
 
-                if( ! retrievedDocuments.containsKey(documentID)) {
+                if (!retrievedDocuments.containsKey(documentID)) {
                     // Document is newly retrieved, initialize its document ranking to 0.
                     retrievedDocuments.put(documentID, 0.0);
                 }
@@ -84,9 +109,9 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         queryTermIDF,
                         documentTermFrequency,
                         documentVectorLength,
-                        averageDocumentVectorLength,
-                        this.mPivotBParameter,
-                        this.mBM25KParameter,
+                        medianDocumentVectorLength,
+                        this.mPivotBParameter.value(),
+                        this.mBM25KParameter.value(),
                         this.mNormalizationType
                 );
             }  // End document while
@@ -103,12 +128,12 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
      */
     protected void accumulateDocumentScore(HashMap<Integer, Double> pRetrievalDocuments, int pDocumentID,
                                            double pQueryTermWeight, double pQueryTermIDF, int pDocumentTermFrequency,
-                                           double pDocumentVectorLength, double pAverageDocumentVectorLength,
+                                           double pDocumentVectorLength, double pMedianDocumentVectorLength,
                                            double pPivotBParameter, double pBM25KParameter,
                                            NormalizationType pNormalizationType) {
         double retrievedDocumentScore = pRetrievalDocuments.get(pDocumentID);
 
-        switch(pNormalizationType) {
+        switch (pNormalizationType) {
             case NONE:
                 retrievedDocumentScore += this.getRankingWithoutNormalization(
                         pQueryTermWeight,
@@ -128,7 +153,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         pQueryTermIDF,
                         pDocumentTermFrequency,
                         pDocumentVectorLength,
-                        pAverageDocumentVectorLength,
+                        pMedianDocumentVectorLength,
                         pPivotBParameter);
                 break;
             case BM25:
@@ -137,7 +162,7 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         pQueryTermIDF,
                         pDocumentTermFrequency,
                         pDocumentVectorLength,
-                        pAverageDocumentVectorLength,
+                        pMedianDocumentVectorLength,
                         pPivotBParameter,
                         pBM25KParameter);
                 break;
@@ -154,48 +179,106 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
      *
      */
     protected double getRankingWithoutNormalization(double pQueryTermWeight, double pQueryTermIDF,
-                                                  int pDocumentTermFrequency) {
+                                                    int pDocumentTermFrequency) {
         return pQueryTermWeight * pDocumentTermFrequency * pQueryTermIDF;
     }
 
     protected double getRankingByCosineSimilarity(double pQueryTermWeight, double pQueryTermIDF,
-                                                int pDocumentTermFrequency, double pDocumentVectorLength) {
+                                                  int pDocumentTermFrequency, double pDocumentVectorLength) {
         return (pQueryTermWeight * pDocumentTermFrequency * pQueryTermIDF) / pDocumentVectorLength;
     }
 
     protected double getRankingByPivotNormalization(double pQueryTermWeight, double pQueryTermIDF,
-                                                  int pDocumentTermFrequency, double pDocumentVectorLength,
-                                                  double pAverageDocumentVectorLength, double pPivotBParameter) {
+                                                    int pDocumentTermFrequency, double pDocumentVectorLength,
+                                                    double pMedianDocumentVectorLength, double pPivotBParameter) {
         return pQueryTermWeight *
-                    (
-                            Math.log(
-                                    1 + Math.log(1 + pDocumentTermFrequency)
-                            )
-                                    /
-                            (
-                                    1 - pPivotBParameter + pPivotBParameter *
-                                            (pDocumentVectorLength / pAverageDocumentVectorLength)
-                            )
-                    ) * pQueryTermIDF;
+                (
+                        Math.log(
+                                1.0 + Math.log(1.0 + pDocumentTermFrequency)
+                        )
+                                /
+                                (
+                                        1.0 - pPivotBParameter + pPivotBParameter *
+                                                (pDocumentVectorLength / pMedianDocumentVectorLength)
+                                )
+                ) * pQueryTermIDF;
     }
 
     protected double getRankingByBM25(double pQueryTermWeight, double pQueryTermIDF, int pDocumentTermFrequency,
-                                    double pDocumentVectorLength, double pAverageDocumentVectorLength,
-                                    double pPivotBParameter, double pBM25KParameter) {
+                                      double pDocumentVectorLength, double pMedianDocumentVectorLength,
+                                      double pPivotBParameter, double pBM25KParameter) {
         return pQueryTermWeight *
-                    (
-                            (
-                                    (pBM25KParameter + 1.0) * pDocumentTermFrequency
-                            )
-                                    /
-                            (
-                                    pDocumentTermFrequency +
-                                            pBM25KParameter * (
-                                                1.0 - pPivotBParameter + pPivotBParameter *
-                                                        (pDocumentVectorLength / pAverageDocumentVectorLength)
-                                            )
-                            )
-                    ) * pQueryTermIDF;
+                (
+                        (
+                                (pBM25KParameter + 1.0) * pDocumentTermFrequency
+                        )
+                                /
+                                (
+                                        pDocumentTermFrequency +
+                                                pBM25KParameter * (
+                                                        1.0 - pPivotBParameter + pPivotBParameter *
+                                                                (pDocumentVectorLength / pMedianDocumentVectorLength)
+                                                )
+                                )
+                ) * pQueryTermIDF;
+    }
+
+
+    /*
+     *
+     *   Modes and parameters setter and getter method
+     *
+     */
+    @Override
+    public List<String> getModes() {
+        return cModes;
+    }
+
+    @Override
+    public String getDefaultMode() {
+        // By default, the program uses inner product only to calculate the rank.
+        return NormalizationType.NONE.toString();
+    }
+
+    @Override
+    public String getMode() {
+        return mNormalizationType.toString();
+    }
+
+    @Override
+    public void setMode(String s) {
+        boolean found = false;
+        for (NormalizationType normalizationType : NormalizationType.values()) {
+            if (normalizationType.toString().equals(s)) {
+                mNormalizationType = normalizationType;
+                found = true;
+                break;
+            }
+        }
+        if (!found) Debug.loge_("failed to set mode on " + getClass().getSimpleName());
+    }
+
+    @Override
+    public List<Parameter<?extends Number>> getParameters() {
+        return cParameters;
+    }
+
+
+    /*
+     *
+     *   Getter methods
+     *
+     */
+    public NormalizationType getNormalizationType() {
+        return this.mNormalizationType;
+    }
+
+    public double getBM25KParameter() {
+        return this.mBM25KParameter.value();
+    }
+
+    public double getPivotBParameter() {
+        return this.mPivotBParameter.value();
     }
 
 
@@ -209,29 +292,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
     }
 
     public void setPivotBParameter(double pValue) {
-        this.mPivotBParameter = pValue;
+        this.mPivotBParameter.value (pValue);
     }
 
     public void setBm25KParameter(double pValue) {
-        this.mBM25KParameter = pValue;
-    }
-
-
-    /*
-     *
-     *   Getter methods
-     *
-     */
-    public NormalizationType getNormalizationType() {
-        return this.mNormalizationType;
-    }
-
-    public double getPivotBParameter() {
-        return this.mPivotBParameter;
-    }
-
-    public double getBM25KParameter() {
-        return this.mBM25KParameter;
+        this.mBM25KParameter.value ( pValue);
     }
 
 }

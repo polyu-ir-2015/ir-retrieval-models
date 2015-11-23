@@ -1,19 +1,21 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
+import hk.edu.polyu.ir.groupc.searchengine.Debug;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.ExpandedTerm;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.InvertedIndexAdapter;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
 import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModelWithRanking;
-
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.mutable.ArrayBuffer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- *
+ * <pre>
  * Created by nEbuLa on 14/11/2015.
  *
  * Extended Boolean Model
@@ -23,23 +25,28 @@ import java.util.HashMap;
  *                  of these two models results in the extended boolean model.
  *
  * References:      https://en.wikipedia.org/wiki/Extended_Boolean_model
- *
+ * </pre>
  */
 public class ExtendedBooleanModel extends RetrievalModelWithRanking {
+
+    protected final DoubleParameter mModelPNormParameter;
+    protected final List<String> cModes;
+    protected final List<Parameter<? extends Number>> cParameters;
+    protected OperationType mOperationType;
 
     public enum OperationType {
         AND, OR
     }
 
-    protected OperationType mOperationType;
-    protected double mModelPNormParameter;
-
     public ExtendedBooleanModel() {
-        // By default, we treat spaces between query terms as AND boolean operations.
-        this.mOperationType = OperationType.AND;
+        cModes = new LinkedList<>();
+        for (OperationType operationType : OperationType.values()) {
+            cModes.add(operationType.toString());
+        }
 
-        // Setting the parameter p to 2 is said to be good.
-        this.mModelPNormParameter = 2.0;
+        cParameters = new LinkedList<>();
+        mModelPNormParameter = new DoubleParameter("Model P Norm", 0.01d, 10.0, 2.0);
+        cParameters.add(mModelPNormParameter);
     }
 
     @Override
@@ -57,21 +64,21 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         for (ExpandedTerm expendedQueryTerm : expendedQueryTerms) {
             double queryTermIDF = InvertedIndexAdapter.getInstance().getInvertedDocumentFrequency(expendedQueryTerm.term());
 
-            Iterator<Tuple2<Object,ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
-            while(documentsIterator.hasNext()) {
+            Iterator<Tuple2<Object, ArrayBuffer<Object>>> documentsIterator = expendedQueryTerm.term().filePositionMap().iterator();
+            while (documentsIterator.hasNext()) {
                 Tuple2<Object, ArrayBuffer<Object>> document = documentsIterator.next();
-                int documentID = (int) document._1;
-                int documentTermFrequency = document._2.length();
+                int documentID = (int) document._1();
+                int termFrequencyInDocument = document._2().length();
                 int maximumTFInDocument = InvertedIndexAdapter.getInstance().getMaximumTermFrequencyInDocument(documentID);
 
-                if( ! termWeightsPerDocument.containsKey(documentID)) {
+                if (!termWeightsPerDocument.containsKey(documentID)) {
                     termWeightsPerDocument.put(documentID, new ArrayList<>());
                 }
 
                 // Save all the weights inside each document for further computation.
                 termWeightsPerDocument.get(documentID).add(
                         this.getNormalizedTermWeight(
-                                documentTermFrequency, maximumTFInDocument,
+                                termFrequencyInDocument, maximumTFInDocument,
                                 queryTermIDF, maximumIDFInCollection)
                 );
 
@@ -92,7 +99,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
             rankingScore = this.getDocumentRankingScore(
                     this.mOperationType,
-                    this.mModelPNormParameter,
+                    this.mModelPNormParameter.value(),
                     allWeights,
                     numberOfQueryTerms);
             retrievedDocuments.put(documentID, rankingScore);
@@ -108,17 +115,18 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
      *
      */
     protected double getNormalizedTermWeight(int pDocumentTermFrequency, int pMaximumTFInDocument,
-                                           double pQueryTermIDF, double pMaximumIDFInCollection) {
+                                             double pQueryTermIDF, double pMaximumIDFInCollection) {
         // The term weight is normalized to 0 to 1.
-        return (pDocumentTermFrequency / pMaximumTFInDocument) * (pQueryTermIDF / pMaximumIDFInCollection);
+        // Multiply 1.0 to cast the variable before division.
+        return (pDocumentTermFrequency * 1.0 / pMaximumTFInDocument * 1.0) * (pQueryTermIDF / pMaximumIDFInCollection);
     }
 
     protected double getDocumentRankingScore(OperationType pOperationType, double pModelPNormParameter,
-                                           ArrayList<Double> pAllWeights, int pNumberOfQueryTerms) {
+                                             ArrayList<Double> pAllWeights, int pNumberOfQueryTerms) {
         double documentRankingScore = 0.0;
 
-        for(double weight: pAllWeights) {
-            switch(pOperationType) {
+        for (double weight : pAllWeights) {
+            switch (pOperationType) {
                 case AND:
                     documentRankingScore += Math.pow(1.0 - weight, pModelPNormParameter);
                     break;
@@ -128,9 +136,9 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
             }
         }
 
-        documentRankingScore /= pNumberOfQueryTerms;
+        documentRankingScore /= (pNumberOfQueryTerms * 1.0);
         documentRankingScore = Math.pow(documentRankingScore, 1.0 / pModelPNormParameter);
-        if(pOperationType == OperationType.AND) {
+        if (pOperationType == OperationType.AND) {
             documentRankingScore = 1.0 - documentRankingScore;
         }
 
@@ -140,15 +148,40 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
     /*
      *
-     *   Setter methods
+     *   Modes and parameters setter and getter method
      *
      */
-    public void setOperationType(OperationType pOperatorType) {
-        this.mOperationType = pOperatorType;
+    @Override
+    public List<String> getModes() {
+        return cModes;
     }
 
-    public void setModelPNormParameter(double pModelPNormParameter) {
-        this.mModelPNormParameter = pModelPNormParameter;
+    @Override
+    public String getDefaultMode() {
+        return OperationType.AND.toString();
+    }
+
+    @Override
+    public String getMode() {
+        return mOperationType.toString();
+    }
+
+    @Override
+    public void setMode(String newMode) {
+        boolean found = false;
+        for (OperationType operationType : OperationType.values()) {
+            if (operationType.toString().equals(newMode)) {
+                mOperationType = operationType;
+                found = true;
+                break;
+            }
+        }
+        if (!found) Debug.loge_("failed to set mode on " + getClass().getSimpleName());
+    }
+
+    @Override
+    public List<Parameter<?extends Number>> getParameters() {
+        return cParameters;
     }
 
 
@@ -162,8 +195,23 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     }
 
     public double getModelPNormParameter() {
-        return this.mModelPNormParameter;
+        return this.mModelPNormParameter.value();
     }
+
+
+    /*
+     *
+     *   Setter methods
+     *
+     */
+    public void setOperationType(OperationType pOperatorType) {
+        this.mOperationType = pOperatorType;
+    }
+
+    public void setModelPNormParameter(double pModelPNormParameter) {
+        this.mModelPNormParameter.value (pModelPNormParameter);
+    }
+
 
 }
 
