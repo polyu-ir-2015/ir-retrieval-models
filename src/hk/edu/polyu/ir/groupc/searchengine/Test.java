@@ -1,8 +1,9 @@
 package hk.edu.polyu.ir.groupc.searchengine;
 
-import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
+import comm.exception.RichFileNotFoundException;
 import hk.edu.polyu.ir.groupc.searchengine.model.result.SearchResultFactory;
 import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.ExtendedBooleanModel;
+import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.RetrievalModel;
 import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.VectorSpaceModel;
 
 import java.io.BufferedReader;
@@ -25,43 +26,17 @@ public class Test {
     public static final String QUERY_TDN = "res/queryTDN";
     private static final String RESULT_FILE = "res/result.txt";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws RichFileNotFoundException {
         System.out.println("start");
 
         Launcher launcher = new Launcher() {
-            @Override
-            public String FILE_PATH() {
-                return FILE_PATH;
-            }
-
-            @Override
-            public String TERM_INDEX_PATH() {
-                return TERM_INDEX_PATH;
-            }
-
-            @Override
-            public String POST_PATH() {
-                return POST_PATH;
-            }
-
-            @Override
-            public String STOP_PATH() {
-                return STOP_PATH;
-            }
-
-            @Override
-            public String JUDGEROBUST() {
-                return JUDGEROBUST;
-            }
-
-            @Override
-            public String QUERY() {
-                return QUERY_TDN;
-            }
-
-            @Override
-            protected boolean needDocumentIndex() {
-                return true;
+            {
+                filePath(FILE_PATH);
+                termIndexPath(TERM_INDEX_PATH);
+                postPath(POST_PATH);
+                stopPath(STOP_PATH);
+                judgeRobustPath(JUDGEROBUST);
+                queryPath(QUERY_TDN);
             }
         };
 

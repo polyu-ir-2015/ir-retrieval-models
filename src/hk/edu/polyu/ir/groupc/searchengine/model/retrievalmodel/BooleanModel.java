@@ -1,7 +1,6 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.query.Query;
-import hk.edu.polyu.ir.groupc.searchengine.model.query.RetrievalModel;
 import hk.edu.polyu.ir.groupc.searchengine.model.result.RetrievalDocument;
 
 import java.util.List;
@@ -33,7 +32,7 @@ public class BooleanModel extends RetrievalModel {
     }
 
     @Override
-    public List<Parameter> getParameters() {
+    public List<Parameter<?extends Number>> getParameters() {
         return null;
     }
 

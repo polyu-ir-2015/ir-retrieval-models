@@ -1,6 +1,7 @@
 package hk.edu.polyu.ir.groupc.searchengine.model.query;
 
 import hk.edu.polyu.ir.groupc.searchengine.model.result.RetrievalDocument;
+import hk.edu.polyu.ir.groupc.searchengine.model.retrievalmodel.RetrievalModel;
 
 import java.util.*;
 

@@ -14,7 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- *
+ * <pre>
  * Created by nEbuLa on 14/11/2015.
  *
  * Vector space model
@@ -27,14 +27,14 @@ import java.util.List;
  * References:      https://en.wikipedia.org/wiki/Vector_space_model
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.8%20TR-TF_Transformation.pdf
  *                  https://d396qusza40orc.cloudfront.net/textretrieval/lecture_notes/wk1/1.9%20TR-Doc_Length_Normalization.pdf
- *
+ * </pre>
  */
 public class VectorSpaceModel extends RetrievalModelWithRanking {
 
     protected final Parameter<Double> mPivotBParameter;
     protected final Parameter<Double> mBM25KParameter;
     protected final List<String> cModes;
-    protected final List<Parameter> cParameters;
+    protected final List<Parameter<?extends Number>> cParameters;
     protected NormalizationType mNormalizationType;
 
     public enum NormalizationType {
@@ -68,8 +68,8 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
         }
 
         cParameters = new LinkedList<>();
-        mPivotBParameter = new Parameter<>("Pivot B", 0.01, 1.0, 0.75);
-        mBM25KParameter = new Parameter<>("BM25K", 0.01, 10.0, 1.5);
+        mPivotBParameter = new DoubleParameter("Pivot B", 0.01, 1.0, 0.75);
+        mBM25KParameter = new DoubleParameter("BM25K", 0.01, 10.0, 1.5);
         cParameters.add(mPivotBParameter);
         cParameters.add(mBM25KParameter);
     }
@@ -110,8 +110,8 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                         documentTermFrequency,
                         documentVectorLength,
                         medianDocumentVectorLength,
-                        this.mPivotBParameter.value,
-                        this.mBM25KParameter.value,
+                        this.mPivotBParameter.value(),
+                        this.mBM25KParameter.value(),
                         this.mNormalizationType
                 );
             }  // End document while
@@ -255,11 +255,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
                 break;
             }
         }
-        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
+        if (!found) Debug.loge_("failed to set mode on " + getClass().getSimpleName());
     }
 
     @Override
-    public List<Parameter> getParameters() {
+    public List<Parameter<?extends Number>> getParameters() {
         return cParameters;
     }
 
@@ -274,11 +274,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
     }
 
     public double getBM25KParameter() {
-        return this.mBM25KParameter.value;
+        return this.mBM25KParameter.value();
     }
 
     public double getPivotBParameter() {
-        return this.mPivotBParameter.value;
+        return this.mPivotBParameter.value();
     }
 
 
@@ -292,11 +292,11 @@ public class VectorSpaceModel extends RetrievalModelWithRanking {
     }
 
     public void setPivotBParameter(double pValue) {
-        this.mPivotBParameter.value = pValue;
+        this.mPivotBParameter.value (pValue);
     }
 
     public void setBm25KParameter(double pValue) {
-        this.mBM25KParameter.value = pValue;
+        this.mBM25KParameter.value ( pValue);
     }
 
 }

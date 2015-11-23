@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- *
+ * <pre>
  * Created by nEbuLa on 14/11/2015.
  *
  * Extended Boolean Model
@@ -25,13 +25,13 @@ import java.util.List;
  *                  of these two models results in the extended boolean model.
  *
  * References:      https://en.wikipedia.org/wiki/Extended_Boolean_model
- *
+ * </pre>
  */
 public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
-    protected final Parameter<Double> mModelPNormParameter;
+    protected final DoubleParameter mModelPNormParameter;
     protected final List<String> cModes;
-    protected final List<Parameter> cParameters;
+    protected final List<Parameter<? extends Number>> cParameters;
     protected OperationType mOperationType;
 
     public enum OperationType {
@@ -45,7 +45,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
         }
 
         cParameters = new LinkedList<>();
-        mModelPNormParameter = new Parameter<>("Model P Norm", 0.01d, 10.0, 2.0);
+        mModelPNormParameter = new DoubleParameter("Model P Norm", 0.01d, 10.0, 2.0);
         cParameters.add(mModelPNormParameter);
     }
 
@@ -99,7 +99,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
 
             rankingScore = this.getDocumentRankingScore(
                     this.mOperationType,
-                    this.mModelPNormParameter.value,
+                    this.mModelPNormParameter.value(),
                     allWeights,
                     numberOfQueryTerms);
             retrievedDocuments.put(documentID, rankingScore);
@@ -176,11 +176,11 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
                 break;
             }
         }
-        if (!found) Debug.loge("failed to set mode on " + getClass().getSimpleName());
+        if (!found) Debug.loge_("failed to set mode on " + getClass().getSimpleName());
     }
 
     @Override
-    public List<Parameter> getParameters() {
+    public List<Parameter<?extends Number>> getParameters() {
         return cParameters;
     }
 
@@ -195,7 +195,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     }
 
     public double getModelPNormParameter() {
-        return this.mModelPNormParameter.value;
+        return this.mModelPNormParameter.value();
     }
 
 
@@ -209,7 +209,7 @@ public class ExtendedBooleanModel extends RetrievalModelWithRanking {
     }
 
     public void setModelPNormParameter(double pModelPNormParameter) {
-        this.mModelPNormParameter.value = pModelPNormParameter;
+        this.mModelPNormParameter.value (pModelPNormParameter);
     }
 
 

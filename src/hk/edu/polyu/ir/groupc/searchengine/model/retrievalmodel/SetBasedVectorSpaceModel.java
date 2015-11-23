@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 
 /**
- *
+ * <pre>
  * Created by nEbuLa on 15/11/2015.
  *
  * Set Based Model
@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  *
  * References:      http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.116.7973&rep=rep1&type=pdf
  *                  http://grupoweb.upf.es/WRG/mir2ed/pdf/slides_chap03.pdf (see Set-based model section)
- *
+ * </pre>
  */
 public class SetBasedVectorSpaceModel extends VectorSpaceModel {
 
@@ -109,13 +109,13 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                                 documentTermSetFrequency,
                                 documentVectorLength,
                                 medianDocumentVectorLength,
-                                this.mPivotBParameter.value,
-                                this.mBM25KParameter.value,
+                                this.mPivotBParameter.value(),
+                                this.mBM25KParameter.value(),
                                 this.mNormalizationType
                         );
                     }  // End document foreach
                 } catch (Exception error) {
-                    Debug.loge(error.getMessage());
+                    Debug.loge("Unknown Error!",error);
                 }
             }  // End query term foreach
         }  // End association level foreach
@@ -319,7 +319,7 @@ public class SetBasedVectorSpaceModel extends VectorSpaceModel {
                     resultSet.add(currentCandidateTermSet);
                 }
             } catch (Exception error) {
-                Debug.loge(error.getMessage());
+                Debug.loge("Unknown Error!",error);
             }
         }
 
